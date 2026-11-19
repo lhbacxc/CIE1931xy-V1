@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using CIE1931xy.Core;
 using CIE1931xy.Core.Export;
 using CIE1931xy.Core.Rendering;
+using CIE1931xy.UI;
 
 namespace CIE1931xy
 {
@@ -18,6 +19,7 @@ namespace CIE1931xy
     /// </summary>
     internal sealed class MainForm : Form
     {
+        private const int ButtonSpacing = 6;
         // ---- 数据
         private readonly List<CieCurve> _curves = new List<CieCurve>();
         private readonly List<CiePoint> _points = new List<CiePoint>();
@@ -71,6 +73,9 @@ namespace CIE1931xy
 
         private void BuildUi()
         {
+            // 所有控件加入后才执行首次 DPI 缩放；提前布局会把 96dpi 基准
+            // 更新为当前 DPI，导致后来创建的按钮只放大字体、不放大边界。
+            SuspendLayout();
             Text = "CIE1931 色度分析器 2.0 — CIE1931xy Rebuilt";
             Font = new Font("Microsoft YaHei UI", 9F);
             BackColor = Color.FromArgb(0xF4, 0xF5, 0xF7);
@@ -188,9 +193,9 @@ namespace CIE1931xy
             {
                 try
                 {
-                    split.Panel1MinSize = 380;
-                    split.Panel2MinSize = 420;
-                    split.SplitterDistance = 470;
+                    split.Panel1MinSize = LogicalToDeviceUnits(380);
+                    split.Panel2MinSize = LogicalToDeviceUnits(420);
+                    split.SplitterDistance = LogicalToDeviceUnits(470);
                 }
                 catch (InvalidOperationException)
                 {
@@ -209,6 +214,7 @@ namespace CIE1931xy
                     }
                 }
             };
+            ResumeLayout(true);
         }
 
         private void AddTab(TabControl tabs, string title, DataGridView grid)
@@ -240,12 +246,13 @@ namespace CIE1931xy
             g.ColumnHeadersDefaultCellStyle.Font = new Font("Microsoft YaHei UI", 9F, FontStyle.Bold);
             g.ColumnHeadersHeight = 34;
             g.ColumnHeadersDefaultCellStyle.WrapMode = DataGridViewTriState.False;
-            g.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            g.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             g.ColumnHeadersDefaultCellStyle.Padding = new Padding(6, 0, 6, 0);
             g.DefaultCellStyle.SelectionBackColor = Color.FromArgb(0x2F, 0x6F, 0xED);
             g.DefaultCellStyle.SelectionForeColor = Color.White;
             g.DefaultCellStyle.Padding = new Padding(6, 0, 6, 0);
             g.RowTemplate.Height = 30;
+            g.AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.AllCells;
             g.GridColor = Color.FromArgb(0xEF, 0xF2, 0xF6);
             g.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
             g.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(0xFA, 0xFB, 0xFD);
@@ -255,11 +262,25 @@ namespace CIE1931xy
             {
                 DataGridViewTextBoxColumn col = new DataGridViewTextBoxColumn();
                 col.HeaderText = headers[i];
-                col.Width = widths[Math.Min(i, widths.Length - 1)];
+                // 列宽不随窗体首次 AutoScale 自动放大，须从逻辑单位转换。
+                col.Width = g.LogicalToDeviceUnits(widths[Math.Min(i, widths.Length - 1)]);
                 col.SortMode = DataGridViewColumnSortMode.NotSortable;
                 g.Columns.Add(col);
             }
+            g.HandleCreated += delegate { FitGridHeaders(g); };
+            g.DpiChangedAfterParent += delegate { FitGridHeaders(g); };
             return g;
+        }
+
+        private static void FitGridHeaders(DataGridView grid)
+        {
+            foreach (DataGridViewColumn column in grid.Columns)
+            {
+                int width = TextRenderer.MeasureText(column.HeaderText,
+                    grid.ColumnHeadersDefaultCellStyle.Font).Width
+                    + grid.ColumnHeadersDefaultCellStyle.Padding.Horizontal + 4;
+                column.MinimumWidth = Math.Max(5, width);
+            }
         }
 
         private MenuStrip BuildMenu()
@@ -312,17 +333,13 @@ namespace CIE1931xy
 
         private Panel BuildCanvasBar()
         {
-            Panel bar = new Panel();
+            FlowLayoutPanel bar = new FlowLayoutPanel();
             bar.Dock = DockStyle.Top;
-            bar.Height = 46;
+            bar.AutoSize = true;
+            bar.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            bar.WrapContents = true;
             bar.BackColor = Color.White;
-            bar.Padding = new Padding(6, 8, 6, 0);
-
-            FlowLayoutPanel flow = new FlowLayoutPanel();
-            flow.Dock = DockStyle.Fill;
-            flow.FlowDirection = FlowDirection.LeftToRight;
-            flow.WrapContents = false;
-            flow.BackColor = Color.White;
+            bar.Padding = new Padding(6, 8, 6, 2);
 
             _btnImportSpectrum = MakeBarButton("导入光谱", false);
             _btnImportSpectrum.Click += delegate { ImportSpectrum(); };
@@ -335,25 +352,28 @@ namespace CIE1931xy
             _btnExportData = MakeBarButton("导出数据", true);
             _btnExportData.Click += delegate { ExportData(); };
 
-            flow.Controls.Add(_btnImportSpectrum);
-            flow.Controls.Add(_btnImportPoints);
-            flow.Controls.Add(_btnPaste);
-            flow.Controls.Add(_btnExportImage);
-            flow.Controls.Add(_btnExportData);
-            bar.Controls.Add(flow);
+            bar.Controls.Add(_btnImportSpectrum);
+            bar.Controls.Add(_btnImportPoints);
+            bar.Controls.Add(_btnPaste);
+            bar.Controls.Add(_btnExportImage);
+            bar.Controls.Add(_btnExportData);
             return bar;
         }
 
         private Button MakeSmallButton(string text, EventHandler onClick)
         {
-            Button b = new Button();
+            Button b = new RoundedButton();
             b.Text = text;
             b.FlatStyle = FlatStyle.Flat;
             b.FlatAppearance.BorderColor = Color.FromArgb(0xCF, 0xD6, 0xE0);
             b.BackColor = Color.White;
             b.ForeColor = Color.FromArgb(0x2B, 0x33, 0x3D);
             b.Size = new Size(88, 28);
-            b.Margin = new Padding(0, 0, 6, 0);
+            b.MinimumSize = b.Size;
+            b.AutoSize = true;
+            b.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            b.Padding = new Padding(6, 4, 6, 4);
+            b.Margin = new Padding(0, 0, ButtonSpacing, ButtonSpacing);
             b.Cursor = Cursors.Hand;
             b.Click += onClick;
             return b;
@@ -361,10 +381,14 @@ namespace CIE1931xy
 
         private static Button MakeBarButton(string text, bool accent)
         {
-            Button b = new Button();
+            Button b = new RoundedButton();
             b.Text = text;
             b.Size = new Size(88, 30);
-            b.Margin = new Padding(0, 0, 6, 0);
+            b.MinimumSize = b.Size;
+            b.AutoSize = true;
+            b.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            b.Padding = new Padding(6, 4, 6, 4);
+            b.Margin = new Padding(0, 0, ButtonSpacing, ButtonSpacing);
             b.FlatStyle = FlatStyle.Flat;
             b.FlatAppearance.BorderSize = 1;
             b.FlatAppearance.BorderColor = accent ? Color.FromArgb(0x2F, 0x6F, 0xED) : Color.FromArgb(0xD5, 0xDA, 0xE1);
@@ -378,18 +402,17 @@ namespace CIE1931xy
         /// <summary>页签上方的动作栏：改颜色 / 改描边 / 批量改名。</summary>
         private Panel BuildActionBar()
         {
-            Panel bar = new Panel();
+            FlowLayoutPanel bar = new FlowLayoutPanel();
             bar.Dock = DockStyle.Top;
-            bar.Height = 42;
+            bar.AutoSize = true;
+            bar.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            bar.WrapContents = true;
             bar.BackColor = Color.FromArgb(0xF7, 0xF9, 0xFC);
-            bar.Padding = new Padding(8, 6, 8, 4);
+            bar.Padding = new Padding(8, 6, 8, 0);
 
             Button btnColor = MakeSmallButton("颜色", delegate { ApplyColorToSelection(false); });
             Button btnOutline = MakeSmallButton("描边", delegate { ApplyColorToSelection(true); });
             Button btnRename = MakeSmallButton("批量改名", delegate { BatchRename(); });
-            btnColor.Location = new Point(8, 6);
-            btnOutline.Location = new Point(102, 6);
-            btnRename.Location = new Point(196, 6);
             bar.Controls.Add(btnColor);
             bar.Controls.Add(btnOutline);
             bar.Controls.Add(btnRename);
@@ -415,10 +438,12 @@ namespace CIE1931xy
             flow.Dock = DockStyle.Fill;
             flow.FlowDirection = FlowDirection.TopDown;
             flow.WrapContents = false;
-            flow.AutoScroll = false;
+            flow.AutoScroll = true;
             flow.Padding = new Padding(0, 4, 0, 0);
             panel.Controls.Add(flow);
             flow.BringToFront();
+            // 设置行跟随侧栏宽度；提示按可用宽度换行，窄窗口仍可滚动查看。
+            flow.Layout += delegate { FitStyleRows(flow); };
 
             // 图型：CIE 1931 xy 与 CIE 1976 u'v'（uv 图用矢量背景，位图底图只有 xy 那一张）
             _cmbKind = MakeCombo("CIE 1931 (x, y)", "CIE 1976 (u', v')");
@@ -439,6 +464,7 @@ namespace CIE1931xy
 
             FlowLayoutPanel row1 = MakeCheckRow(_chkBlackbody, _chkGrid);
             FlowLayoutPanel row2 = MakeCheckRow(_chkWavelength, _chkLegend, _chkLabels);
+            row1.Margin = new Padding(0, ButtonSpacing, 0, 0);
             flow.Controls.Add(row1);
             flow.Controls.Add(row2);
 
@@ -446,29 +472,43 @@ namespace CIE1931xy
 
             FlowLayoutPanel row3 = new FlowLayoutPanel();
             row3.FlowDirection = FlowDirection.LeftToRight;
-            row3.WrapContents = false;
-            row3.Width = 430;
-            row3.Height = 32;
-            row3.Margin = new Padding(0, 6, 0, 0);
+            row3.AutoSize = true;
+            row3.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            row3.Margin = new Padding(0);
             Button btnClear = MakeSmallButton("清空全部数据");
             btnClear.Click += delegate { ClearAll(); };
             row3.Controls.Add(btnClear);
             flow.Controls.Add(row3);
 
             Label note = new Label();
-            note.AutoSize = false;
-            note.Width = 430;
-            note.Height = 44;
-            note.Margin = new Padding(0, 6, 0, 0);
+            note.AutoSize = true;
+            note.Margin = new Padding(0);
             note.ForeColor = Color.FromArgb(0x6B, 0x74, 0x80);
             note.Text = "快捷键：Ctrl+O 导入 · Ctrl+V 粘贴 · Ctrl+B 切背景 · Ctrl+P 黑体线\r\n表格里 Ctrl/Shift 多选，Delete 删除选中项";
             flow.Controls.Add(note);
             return panel;
         }
 
+        private static void FitStyleRows(FlowLayoutPanel flow)
+        {
+            int width = Math.Max(1, flow.ClientSize.Width - flow.Padding.Horizontal
+                - SystemInformation.VerticalScrollBarWidth);
+            foreach (Control child in flow.Controls)
+            {
+                int rowWidth = Math.Max(1, width - child.Margin.Horizontal);
+                if (child is Label label)
+                    label.MaximumSize = new Size(rowWidth, 0);
+                else
+                {
+                    child.MinimumSize = new Size(rowWidth, child.MinimumSize.Height);
+                    child.Width = rowWidth;
+                }
+            }
+        }
+
         private static ComboBox MakeCombo(params string[] items)
         {
-            ComboBox combo = new ComboBox();
+            ComboBox combo = new RoundedComboBox();
             combo.DropDownStyle = ComboBoxStyle.DropDownList;
             foreach (string item in items) combo.Items.Add(item);
             combo.SelectedIndex = 0;
@@ -478,37 +518,48 @@ namespace CIE1931xy
 
         private static Panel MakeRow(string label, Control control)
         {
-            Panel row = new Panel();
-            row.Height = 32;
+            TableLayoutPanel row = new TableLayoutPanel();
+            row.AutoSize = true;
+            row.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            row.MinimumSize = new Size(0, 32);
             row.Width = 430;
+            row.ColumnCount = 2;
+            row.RowCount = 1;
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+            row.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             row.Margin = new Padding(0);
 
             Label lbl = new Label();
             lbl.Text = label;
-            lbl.AutoSize = false;
-            lbl.SetBounds(0, 6, 46, 20);
+            lbl.AutoSize = true;
+            lbl.Anchor = AnchorStyles.Left;
+            lbl.Margin = new Padding(0, 3, 12, 3);
             lbl.ForeColor = Color.FromArgb(0x55, 0x5F, 0x6D);
             lbl.TextAlign = ContentAlignment.MiddleLeft;
-            row.Controls.Add(lbl);
+            row.Controls.Add(lbl, 0, 0);
 
-            control.SetBounds(48, 3, Math.Min(control.Width, 376), 26);
-            row.Controls.Add(control);
+            control.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+            control.Margin = new Padding(0, 3, 0, 3);
+            row.Controls.Add(control, 1, 0);
             return row;
         }
 
         private Panel MakeDpiRow()
         {
-            Panel host = new Panel();
-            host.Width = 376;
-            host.Height = 26;
+            FlowLayoutPanel host = new FlowLayoutPanel();
+            host.AutoSize = true;
+            host.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            host.WrapContents = false;
 
             _numDpi = MakeNumber(72, 1200, 300);
-            _numDpi.SetBounds(0, 2, 66, 24);
+            _numDpi.Width = 80;
+            _numDpi.Margin = new Padding(0, 0, 6, 0);
             _numDpi.ValueChanged += delegate { _exportDpi = (int)_numDpi.Value; };
 
             Label unit = new Label();
             unit.Text = "DPI";
-            unit.SetBounds(72, 2, 40, 22);
+            unit.AutoSize = true;
+            unit.Margin = new Padding(0, 3, 0, 0);
             unit.TextAlign = ContentAlignment.MiddleLeft;
             unit.ForeColor = Color.FromArgb(0x55, 0x5F, 0x6D);
 
@@ -519,7 +570,7 @@ namespace CIE1931xy
 
         private static NumericUpDown MakeNumber(int min, int max, int value)
         {
-            NumericUpDown num = new NumericUpDown();
+            NumericUpDown num = new RoundedNumber();
             num.Minimum = min;
             num.Maximum = max;
             num.Value = Math.Min(max, Math.Max(min, value));
@@ -546,22 +597,25 @@ namespace CIE1931xy
         {
             FlowLayoutPanel row = new FlowLayoutPanel();
             row.FlowDirection = FlowDirection.LeftToRight;
-            row.WrapContents = false;
-            row.Height = 32;
-            row.Width = 430;
-            row.Margin = new Padding(0, 2, 0, 0);
+            row.WrapContents = true;
+            row.AutoSize = true;
+            row.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            row.Margin = new Padding(0);
             foreach (CheckBox box in boxes) row.Controls.Add(box);
             return row;
         }
 
         private CheckBox MakeToggle(string text, bool initial)
         {
-            CheckBox chk = new CheckBox();
+            CheckBox chk = new RoundedToggle();
             chk.Text = text;
             chk.Appearance = Appearance.Button;
             chk.TextAlign = ContentAlignment.MiddleCenter;
             chk.Size = new Size(text.Length > 3 ? 118 : 84, 28);
-            chk.Margin = new Padding(0, 0, 6, 0);
+            chk.MinimumSize = chk.Size;
+            chk.AutoSize = true;
+            chk.Padding = new Padding(6, 4, 6, 4);
+            chk.Margin = new Padding(0, 0, ButtonSpacing, ButtonSpacing);
             chk.FlatStyle = FlatStyle.Flat;
             chk.FlatAppearance.BorderSize = 1;
             chk.FlatAppearance.BorderColor = Color.FromArgb(0xD5, 0xDA, 0xE1);
@@ -580,16 +634,19 @@ namespace CIE1931xy
 
         private static Button MakeSmallButton(string text)
         {
-            Button b = new Button();
+            Button b = new RoundedButton();
             b.Text = text;
             b.Size = new Size(202, 28);
-            b.Margin = new Padding(0, 0, 6, 0);
+            b.MinimumSize = b.Size;
+            b.AutoSize = true;
+            b.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            b.Margin = new Padding(0, 0, ButtonSpacing, ButtonSpacing);
             b.FlatStyle = FlatStyle.Flat;
             b.FlatAppearance.BorderColor = Color.FromArgb(0xD5, 0xDA, 0xE1);
             b.BackColor = Color.White;
             b.ForeColor = Color.FromArgb(0x2B, 0x33, 0x3D);
             b.TextAlign = ContentAlignment.MiddleLeft;
-            b.Padding = new Padding(8, 0, 0, 0);
+            b.Padding = new Padding(8, 4, 8, 4);
             b.UseVisualStyleBackColor = false;
             b.Cursor = Cursors.Hand;
             return b;
@@ -1298,20 +1355,18 @@ namespace CIE1931xy
         /// <summary>“输入坐标”：直接粘贴/输入 x,y 文本，不经过文件。</summary>
         private void InputCoordinates()
         {
-            using (Form dlg = new Form())
+            using (Form dlg = CreateDialog("输入坐标", new Size(420, 320)))
             {
-                dlg.Text = "输入坐标";
-                dlg.StartPosition = FormStartPosition.CenterParent;
-                dlg.ClientSize = new Size(420, 320);
-                dlg.MinimizeBox = false;
-                dlg.MaximizeBox = false;
-                dlg.Font = Font;
+                dlg.MinimumSize = new Size(360, 260);
 
                 Label tip = new Label();
                 tip.Dock = DockStyle.Top;
                 tip.Height = 44;
                 tip.Text = "每行一个点，支持「名称,x,y」或「x,y」；也可从 Excel 直接粘贴。";
                 tip.Padding = new Padding(8, 6, 8, 0);
+                tip.SizeChanged += delegate { FitWrappedLabel(tip); };
+                tip.FontChanged += delegate { FitWrappedLabel(tip); };
+                tip.DpiChangedAfterParent += delegate { FitWrappedLabel(tip); };
                 dlg.Controls.Add(tip);
 
                 TextBox box = new TextBox();
@@ -1322,23 +1377,15 @@ namespace CIE1931xy
                 dlg.Controls.Add(box);
                 box.BringToFront();
 
-                Panel buttons = new Panel();
-                buttons.Dock = DockStyle.Bottom;
-                buttons.Height = 40;
-                Button ok = new Button();
-                ok.Text = "确定";
+                Button ok = MakeBarButton("确定", false);
                 ok.DialogResult = DialogResult.OK;
-                ok.SetBounds(240, 6, 76, 28);
-                Button cancel = new Button();
-                cancel.Text = "取消";
+                Button cancel = MakeBarButton("取消", false);
                 cancel.DialogResult = DialogResult.Cancel;
-                cancel.SetBounds(324, 6, 76, 28);
-                buttons.Controls.Add(ok);
-                buttons.Controls.Add(cancel);
+                Panel buttons = MakeDialogButtons(ok, cancel);
                 dlg.Controls.Add(buttons);
                 dlg.AcceptButton = ok;
                 dlg.CancelButton = cancel;
-
+                dlg.ResumeLayout(true);
                 if (dlg.ShowDialog(this) != DialogResult.OK) return;
                 string text = box.Text;
                 if (string.IsNullOrWhiteSpace(text)) return;
@@ -1355,15 +1402,9 @@ namespace CIE1931xy
 
         private string Prompt(string title, string defaultValue)
         {
-            using (Form dlg = new Form())
+            using (Form dlg = CreateDialog(title, new Size(360, 110)))
             {
-                dlg.Text = title;
                 dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
-                dlg.StartPosition = FormStartPosition.CenterParent;
-                dlg.MinimizeBox = false;
-                dlg.MaximizeBox = false;
-                dlg.ClientSize = new Size(360, 110);
-                dlg.Font = Font;
 
                 TextBox box = new TextBox();
                 box.SetBounds(16, 18, 328, 26);
@@ -1371,22 +1412,57 @@ namespace CIE1931xy
                 box.SelectAll();
                 dlg.Controls.Add(box);
 
-                Button ok = new Button();
-                ok.Text = "确定";
-                ok.SetBounds(170, 62, 82, 28);
+                Button ok = MakeBarButton("确定", false);
                 ok.DialogResult = DialogResult.OK;
-                dlg.Controls.Add(ok);
 
-                Button cancel = new Button();
-                cancel.Text = "取消";
-                cancel.SetBounds(262, 62, 82, 28);
+                Button cancel = MakeBarButton("取消", false);
                 cancel.DialogResult = DialogResult.Cancel;
-                dlg.Controls.Add(cancel);
+                dlg.Controls.Add(MakeDialogButtons(ok, cancel));
 
                 dlg.AcceptButton = ok;
                 dlg.CancelButton = cancel;
+                dlg.ResumeLayout(true);
                 return dlg.ShowDialog(this) == DialogResult.OK ? box.Text : null;
             }
+        }
+
+        private static Form CreateDialog(string title, Size clientSize)
+        {
+            Form dlg = new Form();
+            dlg.SuspendLayout();
+            dlg.AutoScaleDimensions = new SizeF(96F, 96F);
+            dlg.AutoScaleMode = AutoScaleMode.Dpi;
+            // 对话框使用独立的 96dpi 基准，避免默认缩放模式与固定边界混用。
+            dlg.Font = new Font("Microsoft YaHei UI", 9F);
+            dlg.Text = title;
+            dlg.ClientSize = clientSize;
+            dlg.StartPosition = FormStartPosition.CenterParent;
+            dlg.MinimizeBox = false;
+            dlg.MaximizeBox = false;
+            return dlg;
+        }
+
+        private static void FitWrappedLabel(Label label)
+        {
+            int width = Math.Max(1, label.ClientSize.Width - label.Padding.Horizontal);
+            label.Height = TextRenderer.MeasureText(label.Text, label.Font,
+                new Size(width, int.MaxValue), TextFormatFlags.WordBreak).Height
+                + label.Padding.Vertical;
+        }
+
+        private static Panel MakeDialogButtons(Button ok, Button cancel)
+        {
+            FlowLayoutPanel buttons = new FlowLayoutPanel();
+            buttons.Dock = DockStyle.Bottom;
+            buttons.AutoSize = true;
+            buttons.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            buttons.FlowDirection = FlowDirection.RightToLeft;
+            buttons.Padding = new Padding(8);
+            cancel.Margin = new Padding(0);
+            ok.Margin = new Padding(0, 0, ButtonSpacing, 0);
+            buttons.Controls.Add(cancel);
+            buttons.Controls.Add(ok);
+            return buttons;
         }
 
         // ================================================================ 样式交互
@@ -1522,44 +1598,38 @@ namespace CIE1931xy
             if (initial.Length == 0 && _curves.Count > 0 && _curves[0] != null) initial = _curves[0].Name;
             if (initial.Length == 0 && _points.Count > 0 && _points[0] != null) initial = _points[0].Name;
 
-            using (Form dlg = new Form())
+            using (Form dlg = CreateDialog("批量修改名称", new Size(440, 252)))
             {
-                dlg.Text = "批量修改名称";
-                dlg.StartPosition = FormStartPosition.CenterParent;
-                dlg.ClientSize = new Size(440, 252);
                 dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
-                dlg.MinimizeBox = false;
-                dlg.MaximizeBox = false;
-                dlg.Font = Font;
 
-                Label l2 = new Label(); l2.Text = "查找"; l2.SetBounds(16, 20, 60, 20);
+                Label l2 = new Label(); l2.AutoSize = true; l2.Text = "查找"; l2.Location = new Point(16, 20);
                 TextBox find = new TextBox(); find.SetBounds(80, 17, 320, 24);
                 find.Text = initial;
 
-                Label l3 = new Label(); l3.Text = "替换为"; l3.SetBounds(16, 58, 60, 20);
+                Label l3 = new Label(); l3.AutoSize = true; l3.Text = "替换为"; l3.Location = new Point(16, 58);
                 TextBox repl = new TextBox(); repl.SetBounds(80, 55, 320, 24);
 
                 CheckBox matchCase = new CheckBox();
                 matchCase.Text = "区分大小写";
                 matchCase.SetBounds(80, 86, 120, 22);
+                matchCase.AutoSize = true;
 
                 Label tip = new Label();
                 tip.SetBounds(16, 110, 408, 46);
                 tip.ForeColor = Color.FromArgb(0x6B, 0x74, 0x80);
                 tip.Text = "查找留空 = 全部改成“替换为”；替换文本里 {n} 会变成序号。全部数据（曲线+坐标点）一起处理。";
 
-                Button ok = new Button(); ok.Text = "开始替换"; ok.DialogResult = DialogResult.OK;
-                ok.SetBounds(234, 204, 96, 30);
-                Button cancel = new Button(); cancel.Text = "取消"; cancel.DialogResult = DialogResult.Cancel;
-                cancel.SetBounds(338, 204, 80, 30);
+                Button ok = MakeBarButton("开始替换", false); ok.DialogResult = DialogResult.OK;
+                Button cancel = MakeBarButton("取消", false); cancel.DialogResult = DialogResult.Cancel;
 
                 dlg.Controls.Add(l2); dlg.Controls.Add(find);
                 dlg.Controls.Add(l3); dlg.Controls.Add(repl);
                 dlg.Controls.Add(matchCase); dlg.Controls.Add(tip);
-                dlg.Controls.Add(ok); dlg.Controls.Add(cancel);
+                dlg.Controls.Add(MakeDialogButtons(ok, cancel));
                 dlg.AcceptButton = ok;
                 dlg.CancelButton = cancel;
 
+                dlg.ResumeLayout(true);
                 if (dlg.ShowDialog(this) != DialogResult.OK) return;
 
                 string needle = find.Text;

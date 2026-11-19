@@ -43,6 +43,7 @@ flowchart LR
 | --- | --- |
 | `./src/CIE1931xy.Rebuilt/Program.cs` | CLI 参数、编码提供程序、DPI 策略、界面/自检入口 |
 | `./src/CIE1931xy.Rebuilt/MainForm.cs` | 新版布局、三页签、导入、选择、批量改名、样式及导出交互 |
+| `./src/CIE1931xy.Rebuilt/UI/` | 新版控件的小圆角绘制，保留 WinForms 原生交互与自动尺寸 |
 | `./src/CIE1931xy.Rebuilt/Form1.cs`、`Form1.Designer.cs` | 经典事件逻辑与控件布局 |
 | `./src/CIE1931xy.Rebuilt/Core/` | 输入解析、模型、两条计算链路、CMF 表、黑体物理与资源加载 |
 | `./src/CIE1931xy.Rebuilt/Core/Rendering/` | 图型坐标、真彩背景、GDI/SVG 画布与共享渲染器 |

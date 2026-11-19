@@ -38,6 +38,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - 渲染通过 `IPlotCanvas` 共用 GDI 与 SVG 输出；新增绘制能力须核对两种实现。位图 SVG 可含 PNG，矢量背景 SVG 使用裁剪色块。
 - 位图固定 684×732，轴矩形为 (59,12) 起、600×675；对应 xy 范围 0–0.8 / 0–0.9。坐标映射不可使用数据包络替代该范围。
 - 新版 PerMonitorV2 与经典 DpiUnaware 分别维护；不能直接把经典窗口改为新版缩放方式并宣称像素兼容。
+- 新版手工布局必须在全部控件加入后才恢复布局并执行首次 DPI 缩放；按钮、标签、设置行和对话框要按文字与可用空间布局。具体约束见架构说明的 DPI 章节。
 - 通常使用 PascalCase 类型/方法、下划线私有字段；现有文件级和块级 namespace 并存，沿用所改文件风格。Nullable 与 ImplicitUsings 均关闭。
 
 ## 构建与验证

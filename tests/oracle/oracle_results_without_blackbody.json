@@ -1,0 +1,1566 @@
+{
+  "exe": "D:\\DSH\\CIE\\参考\\CIE1931xy.V.1.6.0.2a(2).exe",
+  "exe_name": "CIE1931xy.V.1.6.0.2a(2).exe",
+  "exe_size": 482816,
+  "exe_sha256": "75ff92aac1104e8347013bfee3cbe35d8df555c4c9bb7ccb1e8e33029cbf8d73",
+  "assembly_full_name": "CIE1931xy.V.1.6.0.2, Version=1.6.0.2, Culture=neutral, PublicKeyToken=null",
+  "image_runtime_version": "v2.0.50727",
+  "form_type": "CIE1931xy.Form1",
+  "generated_utc": "2026-10-18T06:15:10.3386077Z",
+  "culture": "zh-CN",
+  "ui_culture": "zh-CN",
+  "cases": [
+    {
+      "name": "bb_5nm_380_780",
+      "input": "case_bb_5nm_380_780.txt",
+      "input_sha256": "6a97d9e63315422b64ece2ab1bb6425615c26136f14d71731b2b847cec681f0b",
+      "input_chars": 1717,
+      "input_bytes": 1717,
+      "nm": 5,
+      "input_file_verified": true,
+      "calc_ms": 6.2683,
+      "dialog_closed": false,
+      "dialog_count": 0,
+      "fields": {
+        "TSV_X": 2737909675602460.5,
+        "TSV_Y": 2826339788076037,
+        "TSV_Z": 3167854831669759.5,
+        "CC_x": 0.3135,
+        "CC_y": 0.3237,
+        "UCS_up": 0.2004,
+        "UCS_vp": 0.4656,
+        "PeakInt": 149280669402870,
+        "Data_Row": 80,
+        "PeakLambda": 445,
+        "Offset": 20,
+        "CalcNum": 1
+      },
+      "textboxes": {
+        "txtBoxCIEx": "0.3135",
+        "txtBoxCIEy": "0.3237",
+        "txtBoxTSVX": "2.73790967560246E+15",
+        "txtBoxTSVY": "2.82633978807604E+15",
+        "txtBoxTSVZ": "3.16785483166976E+15",
+        "txtBoxUCSup": "0.2004",
+        "txtBoxUCSvp": "0.4656"
+      },
+      "grid": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 0,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3135",
+            "0.3237",
+            "445",
+            "149280669402870"
+          ],
+          [
+            "2",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "3",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "bb_1nm_380_780",
+      "input": "case_bb_1nm_380_780.txt",
+      "input_sha256": "074047af2a04196a981a163c35938a01bb938a38ef0f89f21edd78158341fa3c",
+      "input_chars": 8490,
+      "input_bytes": 8490,
+      "nm": 1,
+      "input_file_verified": true,
+      "calc_ms": 3.6526,
+      "dialog_closed": false,
+      "dialog_count": 0,
+      "fields": {
+        "TSV_X": 13689198495171124,
+        "TSV_Y": 14131671504408764,
+        "TSV_Z": 15837653399677002,
+        "CC_x": 0.3136,
+        "CC_y": 0.3237,
+        "UCS_up": 0.2004,
+        "UCS_vp": 0.4656,
+        "PeakInt": 149281825908607,
+        "Data_Row": 400,
+        "PeakLambda": 446,
+        "Offset": 20,
+        "CalcNum": 1
+      },
+      "textboxes": {
+        "txtBoxCIEx": "0.3136",
+        "txtBoxCIEy": "0.3237",
+        "txtBoxTSVX": "1.36891984951711E+16",
+        "txtBoxTSVY": "1.41316715044088E+16",
+        "txtBoxTSVZ": "1.5837653399677E+16",
+        "txtBoxUCSup": "0.2004",
+        "txtBoxUCSvp": "0.4656"
+      },
+      "grid": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 0,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3136",
+            "0.3237",
+            "446",
+            "149281825908607"
+          ],
+          [
+            "2",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "3",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "mono_1nm_360_830",
+      "input": "case_mono_1nm_360_830.txt",
+      "input_sha256": "39bfbc394283145315a6a9b5c686c00666c30a1ee1cb4abb6dcb72bf0879f7ae",
+      "input_chars": 3297,
+      "input_bytes": 3297,
+      "nm": 1,
+      "input_file_verified": true,
+      "calc_ms": 1.4131,
+      "dialog_closed": false,
+      "dialog_count": 0,
+      "fields": {
+        "TSV_X": 106.86546949326986,
+        "TSV_Y": 106.85691710504504,
+        "TSV_Z": 106.89225127845998,
+        "CC_x": 0.3333,
+        "CC_y": 0.3333,
+        "UCS_up": 0.2105,
+        "UCS_vp": 0.4737,
+        "PeakInt": 1,
+        "Data_Row": 470,
+        "PeakLambda": 360,
+        "Offset": 0,
+        "CalcNum": 1
+      },
+      "textboxes": {
+        "txtBoxCIEx": "0.3333",
+        "txtBoxCIEy": "0.3333",
+        "txtBoxTSVX": "106.86546949327",
+        "txtBoxTSVY": "106.856917105045",
+        "txtBoxTSVZ": "106.89225127846",
+        "txtBoxUCSup": "0.2105",
+        "txtBoxUCSvp": "0.4737"
+      },
+      "grid": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 0,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3333",
+            "0.3333",
+            "360",
+            "1"
+          ],
+          [
+            "2",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "3",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "mono_5nm_360_830",
+      "input": "case_mono_5nm_360_830.txt",
+      "input_sha256": "ea222981d76fff5b1472538e7e14ec9f37ae93682007ed31154c3c556210d9a3",
+      "input_chars": 665,
+      "input_bytes": 665,
+      "nm": 5,
+      "input_file_verified": true,
+      "calc_ms": 0.29710000000000003,
+      "dialog_closed": false,
+      "dialog_count": 0,
+      "fields": {
+        "TSV_X": 21.373139988760006,
+        "TSV_Y": 21.371407850470007,
+        "TSV_Z": 21.378664308999998,
+        "CC_x": 0.3333,
+        "CC_y": 0.3333,
+        "UCS_up": 0.2105,
+        "UCS_vp": 0.4737,
+        "PeakInt": 1,
+        "Data_Row": 94,
+        "PeakLambda": 360,
+        "Offset": 0,
+        "CalcNum": 1
+      },
+      "textboxes": {
+        "txtBoxCIEx": "0.3333",
+        "txtBoxCIEy": "0.3333",
+        "txtBoxTSVX": "21.37313998876",
+        "txtBoxTSVY": "21.37140785047",
+        "txtBoxTSVZ": "21.378664309",
+        "txtBoxUCSup": "0.2105",
+        "txtBoxUCSvp": "0.4737"
+      },
+      "grid": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 0,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3333",
+            "0.3333",
+            "360",
+            "1"
+          ],
+          [
+            "2",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "3",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "peak_5nm_470_650",
+      "input": "case_peak_5nm_470_650.txt",
+      "input_sha256": "ab17d2bfbf6c2383743751af2c658b4b32ad82f0ba66d77a87e5865c7f6c77cd",
+      "input_chars": 833,
+      "input_bytes": 833,
+      "nm": 5,
+      "input_file_verified": true,
+      "calc_ms": 0.2888,
+      "dialog_closed": false,
+      "dialog_count": 0,
+      "fields": {
+        "TSV_X": 10.069035797486245,
+        "TSV_Y": 14.714436433880143,
+        "TSV_Z": 1.3614607951487565,
+        "CC_x": 0.3851,
+        "CC_y": 0.5628,
+        "UCS_up": 0.1715,
+        "UCS_vp": 0.5638,
+        "PeakInt": 1,
+        "Data_Row": 36,
+        "PeakLambda": 555,
+        "Offset": 110,
+        "CalcNum": 1
+      },
+      "textboxes": {
+        "txtBoxCIEx": "0.3851",
+        "txtBoxCIEy": "0.5628",
+        "txtBoxTSVX": "10.0690357974862",
+        "txtBoxTSVY": "14.7144364338801",
+        "txtBoxTSVZ": "1.36146079514876",
+        "txtBoxUCSup": "0.1715",
+        "txtBoxUCSvp": "0.5638"
+      },
+      "grid": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 0,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3851",
+            "0.5628",
+            "555",
+            "1"
+          ],
+          [
+            "2",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "3",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "header_1nm_400_700",
+      "input": "case_header_1nm_400_700.txt",
+      "input_sha256": "76b038851867039154f08675ef6ec509b4e204a614c27273c4c6917f1703b63d",
+      "input_chars": 2135,
+      "input_bytes": 2135,
+      "nm": 1,
+      "input_file_verified": true,
+      "calc_ms": 0.80280000000000007,
+      "dialog_closed": false,
+      "dialog_count": 0,
+      "fields": {
+        "TSV_X": 106.59514167199995,
+        "TSV_Y": 106.79611319300001,
+        "TSV_Z": 106.36918782045998,
+        "CC_x": 0.3334,
+        "CC_y": 0.334,
+        "UCS_up": 0.2103,
+        "UCS_vp": 0.474,
+        "PeakInt": 1,
+        "Data_Row": 300,
+        "PeakLambda": 400,
+        "Offset": 40,
+        "CalcNum": 1
+      },
+      "textboxes": {
+        "txtBoxCIEx": "0.3334",
+        "txtBoxCIEy": "0.334",
+        "txtBoxTSVX": "106.595141672",
+        "txtBoxTSVY": "106.796113193",
+        "txtBoxTSVZ": "106.36918782046",
+        "txtBoxUCSup": "0.2103",
+        "txtBoxUCSvp": "0.474"
+      },
+      "grid": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 0,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3334",
+            "0.334",
+            "400",
+            "1"
+          ],
+          [
+            "2",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "3",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "trail_nl_5nm_380_780",
+      "input": "case_trail_nl_5nm_380_780.txt",
+      "input_sha256": "d4c71e640d988b858b3e5f3b60795badde4b2a08e80462686cafd8f2ee9ca7bd",
+      "input_chars": 1715,
+      "input_bytes": 1715,
+      "nm": 5,
+      "input_file_verified": true,
+      "calc_ms": 0.49560000000000004,
+      "dialog_closed": false,
+      "dialog_count": 0,
+      "fields": {
+        "TSV_X": 2737909675602460.5,
+        "TSV_Y": 2826339788076037,
+        "TSV_Z": 3167854831669759.5,
+        "CC_x": 0.3135,
+        "CC_y": 0.3237,
+        "UCS_up": 0.2004,
+        "UCS_vp": 0.4656,
+        "PeakInt": 149280669402870,
+        "Data_Row": 80,
+        "PeakLambda": 445,
+        "Offset": 20,
+        "CalcNum": 1
+      },
+      "textboxes": {
+        "txtBoxCIEx": "0.3135",
+        "txtBoxCIEy": "0.3237",
+        "txtBoxTSVX": "2.73790967560246E+15",
+        "txtBoxTSVY": "2.82633978807604E+15",
+        "txtBoxTSVZ": "3.16785483166976E+15",
+        "txtBoxUCSup": "0.2004",
+        "txtBoxUCSvp": "0.4656"
+      },
+      "grid": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 0,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3135",
+            "0.3237",
+            "445",
+            "149280669402870"
+          ],
+          [
+            "2",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "3",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "accum_seq",
+      "input": [
+        "case_accum_seq_1.txt",
+        "case_accum_seq_2.txt",
+        "case_accum_seq_3.txt"
+      ],
+      "nm": "mixed:5,1,5",
+      "input_sha256": [
+        "ea222981d76fff5b1472538e7e14ec9f37ae93682007ed31154c3c556210d9a3",
+        "39bfbc394283145315a6a9b5c686c00666c30a1ee1cb4abb6dcb72bf0879f7ae",
+        "ab17d2bfbf6c2383743751af2c658b4b32ad82f0ba66d77a87e5865c7f6c77cd"
+      ],
+      "steps": [
+        {
+          "step": 0,
+          "name": "mono_5nm_360_830",
+          "input": "case_accum_seq_1.txt",
+          "nm": 5,
+          "input_file_verified": true,
+          "calc_ms": 0.23320000000000002,
+          "dialog_closed": false,
+          "fields": {
+            "TSV_X": 21.373139988760006,
+            "TSV_Y": 21.371407850470007,
+            "TSV_Z": 21.378664308999998,
+            "CC_x": 0.3333,
+            "CC_y": 0.3333,
+            "UCS_up": 0.2105,
+            "UCS_vp": 0.4737,
+            "PeakInt": 1,
+            "Data_Row": 94,
+            "PeakLambda": 360,
+            "Offset": 0,
+            "CalcNum": 1
+          },
+          "textboxes": {
+            "txtBoxCIEx": "0.3333",
+            "txtBoxCIEy": "0.3333",
+            "txtBoxTSVX": "21.37313998876",
+            "txtBoxTSVY": "21.37140785047",
+            "txtBoxTSVZ": "21.378664309",
+            "txtBoxUCSup": "0.2105",
+            "txtBoxUCSvp": "0.4737"
+          },
+          "grid": {
+            "row_count": 11,
+            "column_count": 5,
+            "allow_user_to_add_rows": true,
+            "current_cell": {
+              "row": 0,
+              "col": 0
+            },
+            "rows": [
+              [
+                "1",
+                "0.3333",
+                "0.3333",
+                "360",
+                "1"
+              ],
+              [
+                "2",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "3",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "4",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "5",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "6",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "7",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "8",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "9",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "10",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null
+              ]
+            ]
+          }
+        },
+        {
+          "step": 1,
+          "name": "mono_1nm_360_830",
+          "input": "case_accum_seq_2.txt",
+          "nm": 1,
+          "input_file_verified": true,
+          "calc_ms": 3.6633,
+          "dialog_closed": false,
+          "fields": {
+            "TSV_X": 106.86546949326986,
+            "TSV_Y": 106.85691710504504,
+            "TSV_Z": 106.89225127845998,
+            "CC_x": 0.3333,
+            "CC_y": 0.3333,
+            "UCS_up": 0.2105,
+            "UCS_vp": 0.4737,
+            "PeakInt": 1,
+            "Data_Row": 470,
+            "PeakLambda": 360,
+            "Offset": 0,
+            "CalcNum": 2
+          },
+          "textboxes": {
+            "txtBoxCIEx": "0.3333",
+            "txtBoxCIEy": "0.3333",
+            "txtBoxTSVX": "106.86546949327",
+            "txtBoxTSVY": "106.856917105045",
+            "txtBoxTSVZ": "106.89225127846",
+            "txtBoxUCSup": "0.2105",
+            "txtBoxUCSvp": "0.4737"
+          },
+          "grid": {
+            "row_count": 11,
+            "column_count": 5,
+            "allow_user_to_add_rows": true,
+            "current_cell": {
+              "row": 1,
+              "col": 0
+            },
+            "rows": [
+              [
+                "1",
+                "0.3333",
+                "0.3333",
+                "360",
+                "1"
+              ],
+              [
+                "2",
+                "0.3333",
+                "0.3333",
+                "360",
+                "1"
+              ],
+              [
+                "3",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "4",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "5",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "6",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "7",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "8",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "9",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "10",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null
+              ]
+            ]
+          }
+        },
+        {
+          "step": 2,
+          "name": "peak_5nm_470_650",
+          "input": "case_accum_seq_3.txt",
+          "nm": 5,
+          "input_file_verified": true,
+          "calc_ms": 0.2323,
+          "dialog_closed": false,
+          "fields": {
+            "TSV_X": 10.069035797486245,
+            "TSV_Y": 14.714436433880143,
+            "TSV_Z": 1.3614607951487565,
+            "CC_x": 0.3851,
+            "CC_y": 0.5628,
+            "UCS_up": 0.1715,
+            "UCS_vp": 0.5638,
+            "PeakInt": 1,
+            "Data_Row": 36,
+            "PeakLambda": 555,
+            "Offset": 110,
+            "CalcNum": 3
+          },
+          "textboxes": {
+            "txtBoxCIEx": "0.3851",
+            "txtBoxCIEy": "0.5628",
+            "txtBoxTSVX": "10.0690357974862",
+            "txtBoxTSVY": "14.7144364338801",
+            "txtBoxTSVZ": "1.36146079514876",
+            "txtBoxUCSup": "0.1715",
+            "txtBoxUCSvp": "0.5638"
+          },
+          "grid": {
+            "row_count": 11,
+            "column_count": 5,
+            "allow_user_to_add_rows": true,
+            "current_cell": {
+              "row": 2,
+              "col": 0
+            },
+            "rows": [
+              [
+                "1",
+                "0.3333",
+                "0.3333",
+                "360",
+                "1"
+              ],
+              [
+                "2",
+                "0.3333",
+                "0.3333",
+                "360",
+                "1"
+              ],
+              [
+                "3",
+                "0.3851",
+                "0.5628",
+                "555",
+                "1"
+              ],
+              [
+                "4",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "5",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "6",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "7",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "8",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "9",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                "10",
+                "",
+                "",
+                "",
+                ""
+              ],
+              [
+                null,
+                null,
+                null,
+                null,
+                null
+              ]
+            ]
+          }
+        }
+      ],
+      "fields_final": {
+        "TSV_X": 10.069035797486245,
+        "TSV_Y": 14.714436433880143,
+        "TSV_Z": 1.3614607951487565,
+        "CC_x": 0.3851,
+        "CC_y": 0.5628,
+        "UCS_up": 0.1715,
+        "UCS_vp": 0.5638,
+        "PeakInt": 1,
+        "Data_Row": 36,
+        "PeakLambda": 555,
+        "Offset": 110,
+        "CalcNum": 3
+      },
+      "textboxes_final": {
+        "txtBoxCIEx": "0.3851",
+        "txtBoxCIEy": "0.5628",
+        "txtBoxTSVX": "10.0690357974862",
+        "txtBoxTSVY": "14.7144364338801",
+        "txtBoxTSVZ": "1.36146079514876",
+        "txtBoxUCSup": "0.1715",
+        "txtBoxUCSvp": "0.5638"
+      },
+      "grid_final": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 2,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3333",
+            "0.3333",
+            "360",
+            "1"
+          ],
+          [
+            "2",
+            "0.3333",
+            "0.3333",
+            "360",
+            "1"
+          ],
+          [
+            "3",
+            "0.3851",
+            "0.5628",
+            "555",
+            "1"
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    },
+    {
+      "name": "bb_1nm_420_620",
+      "input": "case_bb_1nm_420_620.txt",
+      "input_sha256": "b6505ae9ec63bc6a154fe18e0ed8e08b7f7eb312ede0edfd64f7601f88335603",
+      "input_chars": 4401,
+      "input_bytes": 4401,
+      "nm": 1,
+      "input_file_verified": true,
+      "calc_ms": 1.1082,
+      "dialog_closed": false,
+      "dialog_count": 0,
+      "fields": {
+        "TSV_X": 109497398531747.09,
+        "TSV_Y": 122833200586107.41,
+        "TSV_Z": 53216449819993.273,
+        "CC_x": 0.3835,
+        "CC_y": 0.4302,
+        "UCS_up": 0.2074,
+        "UCS_vp": 0.5235,
+        "PeakInt": 1785791054559.05,
+        "Data_Row": 200,
+        "PeakLambda": 620,
+        "Offset": 60,
+        "CalcNum": 1
+      },
+      "textboxes": {
+        "txtBoxCIEx": "0.3835",
+        "txtBoxCIEy": "0.4302",
+        "txtBoxTSVX": "109497398531747",
+        "txtBoxTSVY": "122833200586107",
+        "txtBoxTSVZ": "53216449819993.3",
+        "txtBoxUCSup": "0.2074",
+        "txtBoxUCSvp": "0.5235"
+      },
+      "grid": {
+        "row_count": 11,
+        "column_count": 5,
+        "allow_user_to_add_rows": true,
+        "current_cell": {
+          "row": 0,
+          "col": 0
+        },
+        "rows": [
+          [
+            "1",
+            "0.3835",
+            "0.4302",
+            "620",
+            "1785791054559.05"
+          ],
+          [
+            "2",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "3",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "4",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "5",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "6",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "7",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "8",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "9",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            "10",
+            "",
+            "",
+            "",
+            ""
+          ],
+          [
+            null,
+            null,
+            null,
+            null,
+            null
+          ]
+        ]
+      }
+    }
+  ],
+  "assets": {
+    "Axes_Width": 600,
+    "Axes_Height": 675,
+    "Grid_Width": 15,
+    "pixelperxy": 0.0013333333333333335,
+    "LangFlag": 2,
+    "cie1931xyz_rows": 471,
+    "cie1931xyz_cols": 4,
+    "ccxy1931_rows": 81,
+    "ccxy1931_cols": 3,
+    "cie1931xyz_first_wavelength": 360,
+    "cie1931xyz_last_wavelength": 830,
+    "cie1931xyz_wavelengths_360_step1_in_order": true,
+    "field_types": {
+      "TSV_X": "System.Double",
+      "TSV_Y": "System.Double",
+      "TSV_Z": "System.Double",
+      "CC_x": "System.Double",
+      "CC_y": "System.Double",
+      "UCS_up": "System.Double",
+      "UCS_vp": "System.Double",
+      "PeakInt": "System.Double",
+      "Data_Row": "System.Double",
+      "PeakLambda": "System.Int32",
+      "Offset": "System.Int32",
+      "CalcNum": "System.Int32",
+      "Axes_Width": "System.Int32",
+      "Axes_Height": "System.Int32",
+      "Grid_Width": "System.Int32",
+      "pixelperxy": "System.Double",
+      "LangFlag": "System.Int32"
+    },
+    "declared_strDataInput_length": 11,
+    "MessageTitleText": [
+      [
+        "Title1",
+        "Information",
+        "Information",
+        "提示"
+      ],
+      [
+        "Title2",
+        "Exclamation",
+        "Exclamation",
+        "警告"
+      ],
+      [
+        "Title3",
+        "Error",
+        "Error",
+        "错误"
+      ],
+      [
+        "Title4",
+        "Save File As",
+        "Save File As",
+        "保存为"
+      ],
+      [
+        "Title5",
+        "Help",
+        "Help",
+        "帮助"
+      ],
+      [
+        "Title6",
+        "CIE1931 Chromaticity Coordinate Calculation",
+        "CIE1931 Chromaticity Coordinate Calculation",
+        "CIE1931 色坐标计算"
+      ]
+    ],
+    "HelpText": [
+      "Help1",
+      "This software is for Chromaticity Coordinates calculation, which contains CIE1931 2 degree field of view.\r\n\r\n1.The left Data Input textbox is to acquire the spectra power distribution. The data format is as follows:\r\n  Wavelength List_Separator Power_Data\r\n  which the list separator can be space, comma or Tab, and double click the Data Input label can import data file.\r\n2.Select the data format:\r\n  1)1nm per data point\r\n  2)5nm per data point\r\n  default option is the first data format.\r\n3.Calculate\r\n  It can calculate the CIE 1931 chromaticity coordinates (x, y), tristimulus value X,Y,Z, and uniform chromaticity scale 1976 (u',v').\r\n4.Draw Point\r\n  Draw the calculated chromaticity coordiantes on the CIE 1931 chromaticity diagram.\r\n5.Export Graph\r\n  Export the CIE 1931 chromaticity diagram with points marked on as image files.\r\n\r\nDesigned by nicklxg 2009\r\nE-mail: nicklxg@163.com\r\nVersion: 1.6.0.2",
+      "This software is for Chromaticity Coordinates calculation, which contains CIE1931 2 degree field of view.\r\n\r\n1.The left Data Input textbox is to acquire the spectra power distribution. The data format is as follows:\r\n  Wavelength List_Separator Power_Data\r\n  which the list separator can be space, comma or Tab, and double click the Data Input label can import data file.\r\n2.Select the data format:\r\n  1)1nm per data point\r\n  2)5nm per data point\r\n  default option is the first data format.\r\n3.Calculate\r\n  It can calculate the CIE 1931 chromaticity coordinates (x, y), tristimulus value X,Y,Z, and uniform chromaticity scale 1976 (u',v').\r\n4.Draw Point\r\n  Draw the calculated chromaticity coordiantes on the CIE 1931 chromaticity diagram.\r\n5.Export Graph\r\n  Export the CIE 1931 chromaticity diagram with points marked on as image files.\r\n\r\nDesigned by nicklxg 2009\r\nE-mail: nicklxg@163.com\r\nVersion: 1.6.0.2",
+      "本软件是关于色坐标的计算,包含了CIE1931的2度视场XYZ色度系统\r\n\r\n1.左边的数据输入框用于接受光谱功率分布数据,数据格式如下:\r\n  波长 数据分隔符 光谱功率数据\r\n  其中,数据分隔符可以是空格,逗号或Tab，双击数据输入标签可导入数据文件。\r\n2.选择一种数据格式:\r\n  1)每1nm一个数据\r\n  2)每5nm一个数据\r\n  默认为第1项。\r\n3.计算\r\n  可计算CIE1931色坐标(x,y),三刺激值X,Y,Z和均匀色空间1976(u',v')。\r\n4.描绘坐标\r\n  根据色坐标的计算结果在CIE1931xy色度图上标出。\r\n5.导出图片\r\n  将CIE1931xy色度图上描绘的坐标作为图片导出。\r\n\r\nDesigned by nicklxg 2009\r\nE-mail: nicklxg@163.com\r\nVersion: 1.6.0.2"
+    ]
+  },
+  "watchdog_events": [],
+  "failures": 0,
+  "warnings": 0
+}

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>CIE1931xy</RootNamespace>
+    <AssemblyName>CIE1931xy</AssemblyName>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>CS0168;CS0219;CS0414;CS0649;CS0162</NoWarn>
+    <Version>2.0.0</Version>
+    <FileVersion>2.0.0.0</FileVersion>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <AssemblyTitle>CIE1931xy 色度分析器</AssemblyTitle>
+    <Product>CIE1931xy</Product>
+    <Description>CIE1931xy 重建版：保留原版 1.6.0.2 计算与界面，并新增多曲线、矢量图、多格式导出</Description>
+    <Copyright>Copyright © nicklxg 2011（原版 CIE1931xy 1.6.0.2），重建版 2026</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\cie1931xy.with-blackbody.png" LogicalName="cie1931xy.with-blackbody.png" />
+    <EmbeddedResource Include="Resources\cie1931xy.without-blackbody.png" LogicalName="cie1931xy.without-blackbody.png" />
+    <EmbeddedResource Include="Resources\app.ico" LogicalName="app.ico" />
+  </ItemGroup>
+
+</Project>

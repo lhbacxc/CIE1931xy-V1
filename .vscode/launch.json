@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "CIE: 新版工作台",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "CIE: Debug 构建",
+      "program": "${workspaceFolder}/src/CIE1931xy.Rebuilt/bin/Debug/net8.0-windows/CIE1931xy.exe",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "justMyCode": true
+    },
+    {
+      "name": "CIE: 经典界面",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "CIE: Debug 构建",
+      "program": "${workspaceFolder}/src/CIE1931xy.Rebuilt/bin/Debug/net8.0-windows/CIE1931xy.exe",
+      "args": ["--classic"],
+      "cwd": "${workspaceFolder}",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "justMyCode": true
+    }
+  ]
+}

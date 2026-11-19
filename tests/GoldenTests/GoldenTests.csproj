@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>GoldenTests</AssemblyName>
+    <RootNamespace>CIE1931xy.GoldenTests</RootNamespace>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\CIE1931xy.Rebuilt\Core\CieData.cs" Link="Core\CieData.cs" />
+    <Compile Include="..\..\src\CIE1931xy.Rebuilt\Core\CieMath.cs" Link="Core\CieMath.cs" />
+    <Compile Include="..\..\src\CIE1931xy.Rebuilt\Core\SpectralInput.cs" Link="Core\SpectralInput.cs" />
+    <Compile Include="..\..\src\CIE1931xy.Rebuilt\Core\VbText.cs" Link="Core\VbText.cs" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,45 @@
+# .NET 构建与发布产物（bin/obj 在任意工程目录下生效）
+bin/
+obj/
+/dist/
+/artifacts/
+TestResults/
+*.binlog
+
+# 本机代码索引与临时验证产物
+/.codegraph/
+
+# Visual Studio / JetBrains 用户状态
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code 的共享任务、调试和扩展推荐保留，仅忽略个人覆盖文件
+/.vscode/*.local.json
+
+# 本机日志、临时文件与编辑器备份
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*~
+
+# 本机环境变量配置，示例模板可纳入版本管理
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# 操作系统产生的文件
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 不按图片、CSV、TXT、SVG 或 EXE 扩展名整体忽略：
+# Resources、doc/screens 与 tests/oracle 是项目资源和回归证据，应保留。

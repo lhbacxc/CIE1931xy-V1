@@ -20,6 +20,7 @@ namespace CIE1931xy
     internal sealed class MainForm : Form
     {
         private const int ButtonSpacing = 6;
+        private enum DataInputKind { Auto, Coordinates, Spectrum }
         // ---- 数据
         private readonly List<CieCurve> _curves = new List<CieCurve>();
         private readonly List<CiePoint> _points = new List<CiePoint>();
@@ -46,16 +47,21 @@ namespace CIE1931xy
         private ToolStripStatusLabel _status;
         private Label _hint;
         private ComboBox _cmbKind;
-        private ComboBox _cmbBackground;
         private CheckBox _chkBlackbody;
         private CheckBox _chkGrid;
+        private CheckBox _chkBlackBackground;
+        private ToolStripMenuItem _menuBlackBackground;
+        private CheckBox _chkReferenceLine;
+        private ToolStripMenuItem _menuReferenceLine;
         private CheckBox _chkWavelength;
         private CheckBox _chkLegend;
         private CheckBox _chkLabels;
         private NumericUpDown _numDpi;
-        private Button _btnPaste;
         private Button _btnImportSpectrum;
-        private Button _btnImportPoints;
+        private Button _btnInputData;
+        private Button _btnColor;
+        private Button _btnOutline;
+        private Button _btnRename;
         private Button _btnExportImage;
         private Button _btnExportData;
         private bool _suppressUiEvents;
@@ -291,21 +297,25 @@ namespace CIE1931xy
 
             ToolStripMenuItem file = new ToolStripMenuItem("文件(&F)");
             file.DropDownItems.Add(MakeItem("导入光谱文件…", delegate { ImportSpectrum(); }, Keys.Control | Keys.O));
-            file.DropDownItems.Add(MakeItem("粘贴光谱/坐标…", delegate { PasteFromClipboard(); }, Keys.Control | Keys.Shift | Keys.V));
-            file.DropDownItems.Add(MakeItem("输入色坐标…", delegate { InputCoordinates(); }, Keys.Control | Keys.Shift | Keys.O));
+            file.DropDownItems.Add(MakeItem("输入数据（光谱/坐标）…", delegate { InputData(); }, Keys.Control | Keys.Shift | Keys.V));
+            file.DropDownItems.Add(MakeItem("输入色坐标…", delegate { InputData(DataInputKind.Coordinates); }, Keys.Control | Keys.Shift | Keys.O));
             file.DropDownItems.Add(MakeItem("从剪贴板粘贴…", delegate { PasteFromClipboard(); }, Keys.Control | Keys.V));
             file.DropDownItems.Add(MakeItem("批量修改名称…", delegate { BatchRename(); }, Keys.Control | Keys.H));
             file.DropDownItems.Add(new ToolStripSeparator());
-            file.DropDownItems.Add(MakeItem("导出图片…", delegate { ExportImage(); }, Keys.Control | Keys.S));
             file.DropDownItems.Add(MakeItem("导出数据…", delegate { ExportData(); }, Keys.Control | Keys.E));
+            file.DropDownItems.Add(MakeItem("导出图片…", delegate { ExportImage(); }, Keys.Control | Keys.S));
             file.DropDownItems.Add(new ToolStripSeparator());
             file.DropDownItems.Add(MakeItem("清空全部数据", delegate { ClearAll(); }, Keys.None));
             file.DropDownItems.Add(MakeItem("退出", delegate { Close(); }, Keys.None));
 
             ToolStripMenuItem view = new ToolStripMenuItem("视图(&V)");
             view.DropDownItems.Add(MakeItem("切换图型 CIE 1931 xy / CIE 1976 u'v'", delegate { ToggleKind(); }, Keys.Control | Keys.T));
-            view.DropDownItems.Add(MakeItem("切换背景 位图 / 矢量", delegate { ToggleBackground(); }, Keys.Control | Keys.B));
             view.DropDownItems.Add(MakeItem("黑体轨迹线 开 / 关", delegate { ToggleBlackbody(); }, Keys.Control | Keys.P));
+            _menuReferenceLine = MakeItem("参考线 x+y=1（z=0）", delegate { ToggleCheck(_chkReferenceLine); }, Keys.None);
+            view.DropDownItems.Add(_menuReferenceLine);
+            _menuBlackBackground = MakeItem("黑色背景（关闭为白色）", delegate { ToggleCheck(_chkBlackBackground); }, Keys.None);
+            view.DropDownItems.Add(_menuBlackBackground);
+            view.DropDownItems.Add(MakeItem("坐标轴名称与间距…", delegate { EditAxisTitles(); }, Keys.None));
             view.DropDownItems.Add(new ToolStripSeparator());
             view.DropDownItems.Add(MakeItem("图例", delegate { ToggleCheck(_chkLegend); }, Keys.None));
             view.DropDownItems.Add(MakeItem("波长标注", delegate { ToggleCheck(_chkWavelength); }, Keys.None));
@@ -333,6 +343,22 @@ namespace CIE1931xy
 
         private Panel BuildCanvasBar()
         {
+            FlowLayoutPanel bar = MakeToolbar();
+            _btnColor = MakeBarButton("颜色", false);
+            _btnColor.Click += delegate { ApplyColorToSelection(false); };
+            _btnOutline = MakeBarButton("描边", false);
+            _btnOutline.Click += delegate { ApplyColorToSelection(true); };
+            _btnExportData = MakeBarButton("导出数据", false);
+            _btnExportData.Click += delegate { ExportData(); };
+            _btnExportImage = MakeBarButton("导出图片", true);
+            _btnExportImage.Click += delegate { ExportImage(); };
+            AddToolbarGroup(bar, _btnColor, _btnOutline);
+            AddToolbarGroup(bar, _btnExportData, _btnExportImage);
+            return bar;
+        }
+
+        private static FlowLayoutPanel MakeToolbar()
+        {
             FlowLayoutPanel bar = new FlowLayoutPanel();
             bar.Dock = DockStyle.Top;
             bar.AutoSize = true;
@@ -340,43 +366,22 @@ namespace CIE1931xy
             bar.WrapContents = true;
             bar.BackColor = Color.White;
             bar.Padding = new Padding(6, 8, 6, 2);
-
-            _btnImportSpectrum = MakeBarButton("导入光谱", false);
-            _btnImportSpectrum.Click += delegate { ImportSpectrum(); };
-            _btnImportPoints = MakeBarButton("输入坐标", false);
-            _btnImportPoints.Click += delegate { InputCoordinates(); };
-            _btnPaste = MakeBarButton("粘贴", false);
-            _btnPaste.Click += delegate { PasteData(); };
-            _btnExportImage = MakeBarButton("导出图片", true);
-            _btnExportImage.Click += delegate { ExportImage(); };
-            _btnExportData = MakeBarButton("导出数据", true);
-            _btnExportData.Click += delegate { ExportData(); };
-
-            bar.Controls.Add(_btnImportSpectrum);
-            bar.Controls.Add(_btnImportPoints);
-            bar.Controls.Add(_btnPaste);
-            bar.Controls.Add(_btnExportImage);
-            bar.Controls.Add(_btnExportData);
             return bar;
         }
 
-        private Button MakeSmallButton(string text, EventHandler onClick)
+        private static void AddToolbarGroup(FlowLayoutPanel bar, params Button[] buttons)
         {
-            Button b = new RoundedButton();
-            b.Text = text;
-            b.FlatStyle = FlatStyle.Flat;
-            b.FlatAppearance.BorderColor = Color.FromArgb(0xCF, 0xD6, 0xE0);
-            b.BackColor = Color.White;
-            b.ForeColor = Color.FromArgb(0x2B, 0x33, 0x3D);
-            b.Size = new Size(88, 28);
-            b.MinimumSize = b.Size;
-            b.AutoSize = true;
-            b.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            b.Padding = new Padding(6, 4, 6, 4);
-            b.Margin = new Padding(0, 0, ButtonSpacing, ButtonSpacing);
-            b.Cursor = Cursors.Hand;
-            b.Click += onClick;
-            return b;
+            FlowLayoutPanel group = new FlowLayoutPanel();
+            group.AutoSize = true;
+            group.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            group.WrapContents = false;
+            group.Margin = new Padding(0, 0, ButtonSpacing * 3, ButtonSpacing);
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                buttons[i].Margin = new Padding(0, 0, i + 1 < buttons.Length ? ButtonSpacing : 0, 0);
+                group.Controls.Add(buttons[i]);
+            }
+            bar.Controls.Add(group);
         }
 
         private static Button MakeBarButton(string text, bool accent)
@@ -402,27 +407,22 @@ namespace CIE1931xy
         /// <summary>页签上方的动作栏：改颜色 / 改描边 / 批量改名。</summary>
         private Panel BuildActionBar()
         {
-            FlowLayoutPanel bar = new FlowLayoutPanel();
-            bar.Dock = DockStyle.Top;
-            bar.AutoSize = true;
-            bar.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            bar.WrapContents = true;
-            bar.BackColor = Color.FromArgb(0xF7, 0xF9, 0xFC);
-            bar.Padding = new Padding(8, 6, 8, 0);
-
-            Button btnColor = MakeSmallButton("颜色", delegate { ApplyColorToSelection(false); });
-            Button btnOutline = MakeSmallButton("描边", delegate { ApplyColorToSelection(true); });
-            Button btnRename = MakeSmallButton("批量改名", delegate { BatchRename(); });
-            bar.Controls.Add(btnColor);
-            bar.Controls.Add(btnOutline);
-            bar.Controls.Add(btnRename);
+            FlowLayoutPanel bar = MakeToolbar();
+            _btnImportSpectrum = MakeBarButton("导入光谱", false);
+            _btnImportSpectrum.Click += delegate { ImportSpectrum(); };
+            _btnInputData = MakeBarButton("输入数据", false);
+            _btnInputData.Click += delegate { InputData(); };
+            _btnRename = MakeBarButton("批量改名", false);
+            _btnRename.Click += delegate { BatchRename(); };
+            AddToolbarGroup(bar, _btnImportSpectrum, _btnInputData);
+            AddToolbarGroup(bar, _btnRename);
             return bar;
         }
 
         private Panel BuildStylePanel()
         {
             Panel panel = new Panel();
-            panel.Height = 340;   // 留出底部快捷键提示，避免被裁
+            panel.Height = 374;   // 留出背景开关及底部提示的空间
             panel.BackColor = Color.FromArgb(0xF0, 0xF3, 0xF7);
             panel.Padding = new Padding(12, 8, 12, 8);
 
@@ -445,36 +445,50 @@ namespace CIE1931xy
             // 设置行跟随侧栏宽度；提示按可用宽度换行，窄窗口仍可滚动查看。
             flow.Layout += delegate { FitStyleRows(flow); };
 
-            // 图型：CIE 1931 xy 与 CIE 1976 u'v'（uv 图用矢量背景，位图底图只有 xy 那一张）
+            // 新版两种图型统一使用可编辑的矢量绘图。
             _cmbKind = MakeCombo("CIE 1931 (x, y)", "CIE 1976 (u', v')");
             _cmbKind.SelectedIndexChanged += delegate { OnKindChanged(); };
             flow.Controls.Add(MakeRow("图型", _cmbKind));
 
-            _cmbBackground = MakeCombo("位图底图", "矢量背景");
-            _cmbBackground.SelectedIndexChanged += delegate { OnBackgroundChanged(); };
-            flow.Controls.Add(MakeRow("背景", _cmbBackground));
+            Label previewNote = new Label();
+            previewNote.AutoSize = true;
+            previewNote.ForeColor = Color.FromArgb(0x6B, 0x74, 0x80);
+            previewNote.Margin = new Padding(0, 0, 0, ButtonSpacing);
+            previewNote.Text = "预览采用矢量绘图，网格和标注可独立开关。\r\n导出可选 PNG/TIFF 位图或 SVG 矢量图。";
+            flow.Controls.Add(previewNote);
 
             flow.Controls.Add(MakeRow("导出", MakeDpiRow()));
 
             _chkBlackbody = MakeToggle("黑体线", true);
             _chkGrid = MakeToggle("网格", true);
+            _chkReferenceLine = MakeToggle("参考线", false);
             _chkWavelength = MakeToggle("波长标注", false);
             _chkLegend = MakeToggle("图例", false);
             _chkLabels = MakeToggle("数据标签", false);
+            _chkBlackBackground = MakeToggle("黑色背景", false);
 
-            FlowLayoutPanel row1 = MakeCheckRow(_chkBlackbody, _chkGrid);
+            FlowLayoutPanel row1 = MakeCheckRow(_chkBlackbody, _chkGrid, _chkReferenceLine);
             FlowLayoutPanel row2 = MakeCheckRow(_chkWavelength, _chkLegend, _chkLabels);
             row1.Margin = new Padding(0, ButtonSpacing, 0, 0);
             flow.Controls.Add(row1);
             flow.Controls.Add(row2);
+            flow.Controls.Add(MakeCheckRow(_chkBlackBackground));
 
-
+            Label referenceNote = new Label();
+            referenceNote.AutoSize = true;
+            referenceNote.ForeColor = Color.FromArgb(0x6B, 0x74, 0x80);
+            referenceNote.Margin = new Padding(0, 0, 0, ButtonSpacing);
+            referenceNote.Text = "参考线：x+y=1，即 z=0；仅适用于 CIE 1931 xy。";
+            flow.Controls.Add(referenceNote);
 
             FlowLayoutPanel row3 = new FlowLayoutPanel();
             row3.FlowDirection = FlowDirection.LeftToRight;
             row3.AutoSize = true;
             row3.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             row3.Margin = new Padding(0);
+            Button btnAxes = MakeBarButton("坐标轴设置", false);
+            btnAxes.Click += delegate { EditAxisTitles(); };
+            row3.Controls.Add(btnAxes);
             Button btnClear = MakeSmallButton("清空全部数据");
             btnClear.Click += delegate { ClearAll(); };
             row3.Controls.Add(btnClear);
@@ -484,7 +498,7 @@ namespace CIE1931xy
             note.AutoSize = true;
             note.Margin = new Padding(0);
             note.ForeColor = Color.FromArgb(0x6B, 0x74, 0x80);
-            note.Text = "快捷键：Ctrl+O 导入 · Ctrl+V 粘贴 · Ctrl+B 切背景 · Ctrl+P 黑体线\r\n表格里 Ctrl/Shift 多选，Delete 删除选中项";
+            note.Text = "快捷键：Ctrl+O 导入 · Ctrl+V 粘贴 · Ctrl+P 黑体线\r\n表格里 Ctrl/Shift 多选，Delete 删除选中项";
             flow.Controls.Add(note);
             return panel;
         }
@@ -501,6 +515,8 @@ namespace CIE1931xy
                 else
                 {
                     child.MinimumSize = new Size(rowWidth, child.MinimumSize.Height);
+                    // AutoSize 行不能按内部控件的旧宽度再次撑开，尤其是出现纵向滚动条后。
+                    child.MaximumSize = new Size(rowWidth, 0);
                     child.Width = rowWidth;
                 }
             }
@@ -656,11 +672,16 @@ namespace CIE1931xy
 
         private void ApplyStyleDefaults()
         {
+            _style.UseBitmapBackground = false;
             _style.ShowGrid = true;
             _style.ShowBlackbody = true;
             _style.ShowWavelengthLabels = false;
             _style.ShowLegend = false;
             _style.ShowPointLabels = false;
+            _style.ShowClosingLine = false;
+            _style.SetBlackBackground(false);
+            _menuBlackBackground.Checked = false;
+            UpdateReferenceLineState();
         }
 
         private void LoadSamples()
@@ -783,36 +804,48 @@ namespace CIE1931xy
             SetStatus("导入完成：新增曲线 " + addedCurves + " 条，坐标点 " + addedPoints + " 个。");
         }
 
-        /// <summary>粘贴/输入数据：弹窗里粘贴文本，确定后按内容自动识别光谱或色坐标。</summary>
-        private void PasteData()
+        /// <summary>统一手动输入与粘贴入口，可自动识别或明确指定数据类型。</summary>
+        private void InputData(DataInputKind initialKind = DataInputKind.Auto)
         {
-            using (Form dlg = new Form())
+            using (Form dlg = CreateDialog("输入数据", new Size(520, 400)))
             {
-                dlg.Text = "粘贴数据";
-                dlg.StartPosition = FormStartPosition.CenterParent;
-                dlg.ClientSize = new Size(520, 400);
-                dlg.MinimizeBox = false;
-                dlg.MaximizeBox = false;
-                dlg.Font = Font;
+                dlg.MinimumSize = new Size(420, 300);
+
+                Panel header = new Panel();
+                header.Dock = DockStyle.Top;
+                header.AutoSize = true;
+                header.AutoSizeMode = AutoSizeMode.GrowAndShrink;
 
                 Label tip = new Label();
                 tip.Dock = DockStyle.Top;
-                tip.Height = 46;
-                tip.Padding = new Padding(10, 8, 10, 0);
+                tip.Height = 56;
+                tip.Padding = new Padding(8, 6, 8, 6);
                 tip.ForeColor = Color.FromArgb(0x6B, 0x74, 0x80);
-                tip.Text = "把数据粘贴到下面（可直接从 Excel 复制）：两列=波长/强度 或 色坐标 x,y；三列=名称,x,y；也支持带表头的 CSV。";
-                dlg.Controls.Add(tip);
+                tip.Text = "可手动输入或从 Excel 粘贴。坐标：x,y 或 名称,x,y；光谱：波长,强度（支持多列与表头）。识别不符时请选择数据类型。";
+                tip.SizeChanged += delegate { FitWrappedLabel(tip); };
+                tip.FontChanged += delegate { FitWrappedLabel(tip); };
+                tip.DpiChangedAfterParent += delegate { FitWrappedLabel(tip); };
+                header.Controls.Add(tip);
 
-                Panel buttons = new Panel();
-                buttons.Dock = DockStyle.Bottom;
-                buttons.Height = 46;
-                Button ok = new Button(); ok.Text = "确定"; ok.DialogResult = DialogResult.OK;
-                ok.SetBounds(330, 8, 80, 30);
-                Button cancel = new Button(); cancel.Text = "取消"; cancel.DialogResult = DialogResult.Cancel;
-                cancel.SetBounds(418, 8, 80, 30);
-                Button fromClip = new Button(); fromClip.Text = "读剪贴板"; fromClip.SetBounds(12, 8, 96, 30);
-                buttons.Controls.Add(fromClip); buttons.Controls.Add(ok); buttons.Controls.Add(cancel);
-                dlg.Controls.Add(buttons);
+                FlowLayoutPanel typeRow = new FlowLayoutPanel();
+                typeRow.Dock = DockStyle.Top;
+                typeRow.AutoSize = true;
+                typeRow.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                typeRow.Padding = new Padding(8, 6, 8, 0);
+                Label typeLabel = new Label();
+                typeLabel.Text = "数据类型";
+                typeLabel.AutoSize = true;
+                typeLabel.Margin = new Padding(0, 5, 8, 6);
+                ComboBox kind = new RoundedComboBox();
+                kind.DropDownStyle = ComboBoxStyle.DropDownList;
+                kind.Items.AddRange(new object[] { "自动识别", "色坐标", "光谱" });
+                kind.SelectedIndex = (int)initialKind;
+                kind.Width = 180;
+                kind.Margin = new Padding(0, 0, 0, 6);
+                typeRow.Controls.Add(typeLabel);
+                typeRow.Controls.Add(kind);
+                header.Controls.Add(typeRow);
+                dlg.Controls.Add(header);
 
                 TextBox box = new TextBox();
                 box.Multiline = true;
@@ -823,28 +856,43 @@ namespace CIE1931xy
                 dlg.Controls.Add(box);
                 box.BringToFront();
 
-                string clip = null;
-                try { if (Clipboard.ContainsText()) clip = Clipboard.GetText(); }
-                catch (Exception) { }
-                if (!string.IsNullOrEmpty(clip)) box.Text = clip;
+                Button ok = MakeBarButton("添加数据", true);
+                ok.DialogResult = DialogResult.OK;
+                Button cancel = MakeBarButton("取消", false);
+                cancel.DialogResult = DialogResult.Cancel;
+                Button fromClip = MakeBarButton("读取剪贴板", false);
+                FlowLayoutPanel buttons = (FlowLayoutPanel)MakeDialogButtons(ok, cancel);
+                fromClip.Margin = new Padding(0, 0, ButtonSpacing, 0);
+                buttons.Controls.Add(fromClip);
+                dlg.Controls.Add(buttons);
                 fromClip.Click += delegate
                 {
-                    try { if (Clipboard.ContainsText()) box.Text = Clipboard.GetText(); }
-                    catch (Exception ex) { AddMessage("⚠ 读取剪贴板失败：" + ex.Message); }
+                    try
+                    {
+                        if (Clipboard.ContainsText()) box.Text = Clipboard.GetText();
+                        else MessageBox.Show(dlg, "剪贴板里没有文本。", "读取剪贴板", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(dlg, "读取剪贴板失败：" + ex.Message, "读取剪贴板", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    }
                 };
 
                 dlg.AcceptButton = ok;
                 dlg.CancelButton = cancel;
+                dlg.ResumeLayout(true);
                 if (dlg.ShowDialog(this) != DialogResult.OK) return;
                 string text = box.Text;
-                if (string.IsNullOrWhiteSpace(text)) { SetStatus("没有粘贴任何数据。"); return; }
-                ParsePastedText(text, "粘贴数据");
+                if (string.IsNullOrWhiteSpace(text)) { SetStatus("没有输入任何数据。"); return; }
+                ParsePastedText(text, "输入数据", (DataInputKind)kind.SelectedIndex);
             }
         }
 
-        private void ParsePastedText(string text, string fallbackName)
+        private void ParsePastedText(string text, string fallbackName, DataInputKind kind = DataInputKind.Auto)
         {
-            if (SpectrumCsvParser.LooksLikeCoordinates(text))
+            bool coordinates = kind == DataInputKind.Coordinates
+                || (kind == DataInputKind.Auto && SpectrumCsvParser.LooksLikeCoordinates(text));
+            if (coordinates)
             {
                 ParseResult r = CoordinateParser.Parse(text);
                 foreach (CiePoint p in r.Points)
@@ -856,7 +904,7 @@ namespace CIE1931xy
                 }
                 foreach (string w in r.Warnings) AddMessage(w);
                 foreach (string e in r.Errors) AddMessage("⚠ " + e);
-                SetStatus("已粘贴 " + r.Points.Count + " 个色坐标点。");
+                SetStatus("已添加 " + r.Points.Count + " 个色坐标点。");
             }
             else
             {
@@ -873,7 +921,7 @@ namespace CIE1931xy
                 }
                 foreach (string w in r.Warnings) AddMessage(w);
                 foreach (string e in r.Errors) AddMessage("⚠ " + e);
-                SetStatus("已粘贴 " + r.Curves.Count + " 条光谱曲线。");
+                SetStatus("已添加 " + r.Curves.Count + " 条光谱曲线。");
             }
             UpdateTables();
             ShowRelevantTab();
@@ -896,39 +944,7 @@ namespace CIE1931xy
                 SetStatus("剪贴板里没有文本。");
                 return;
             }
-            if (SpectrumCsvParser.LooksLikeCoordinates(text))
-            {
-                ParseResult r = CoordinateParser.Parse(text);
-                foreach (CiePoint p in r.Points)
-                {
-                    p.Color = PointColor;
-                    p.OutlineColor = Color.Black;
-                    p.Shape = MarkerShape.Circle;
-                    _points.Add(p);
-                }
-                foreach (string w in r.Warnings) AddMessage(w);
-                foreach (string e in r.Errors) AddMessage("⚠ " + e);
-                SetStatus("已粘贴 " + r.Points.Count + " 个色坐标点。");
-            }
-            else
-            {
-                ParseResult r = SpectrumCsvParser.Parse(text);
-                bool multiple = r.Curves.Count > 1;
-                foreach (CieCurve c in r.Curves)
-                {
-                    if (!multiple) c.Name = "剪贴板数据";
-                    c.Color = NextColor();
-                    c.Shape = MarkerShape.Circle;
-                    c.OutlineColor = Color.Black;
-                    c.Result = Colorimetry.AnalyzeCurve(c);
-                    _curves.Add(c);
-                }
-                foreach (string w in r.Warnings) AddMessage(w);
-                foreach (string e in r.Errors) AddMessage("⚠ " + e);
-                SetStatus("已粘贴 " + r.Curves.Count + " 条光谱曲线。");
-            }
-            UpdateTables();
-            ScheduleRender();
+            ParsePastedText(text, "剪贴板数据");
         }
 
         /// <summary>导入数据的默认颜色：统一红色（用户要求），需要区分时用「颜色」按钮自己改。</summary>
@@ -986,6 +1002,11 @@ namespace CIE1931xy
             }
             SyncSelectionFlags();
             UpdateHint();
+            bool hasData = _curves.Count > 0 || _points.Count > 0;
+            _btnColor.Enabled = hasData;
+            _btnOutline.Enabled = hasData;
+            _btnRename.Enabled = hasData;
+            _btnExportData.Enabled = hasData;
         }
 
         /// <summary>把表格选中状态同步到数据模型（选中项在画布上高亮，导出时不高亮）。</summary>
@@ -1353,53 +1374,6 @@ namespace CIE1931xy
         }
 
         /// <summary>“输入坐标”：直接粘贴/输入 x,y 文本，不经过文件。</summary>
-        private void InputCoordinates()
-        {
-            using (Form dlg = CreateDialog("输入坐标", new Size(420, 320)))
-            {
-                dlg.MinimumSize = new Size(360, 260);
-
-                Label tip = new Label();
-                tip.Dock = DockStyle.Top;
-                tip.Height = 44;
-                tip.Text = "每行一个点，支持「名称,x,y」或「x,y」；也可从 Excel 直接粘贴。";
-                tip.Padding = new Padding(8, 6, 8, 0);
-                tip.SizeChanged += delegate { FitWrappedLabel(tip); };
-                tip.FontChanged += delegate { FitWrappedLabel(tip); };
-                tip.DpiChangedAfterParent += delegate { FitWrappedLabel(tip); };
-                dlg.Controls.Add(tip);
-
-                TextBox box = new TextBox();
-                box.Multiline = true;
-                box.ScrollBars = ScrollBars.Vertical;
-                box.Dock = DockStyle.Fill;
-                box.Font = new Font("Consolas", 9.5F);
-                dlg.Controls.Add(box);
-                box.BringToFront();
-
-                Button ok = MakeBarButton("确定", false);
-                ok.DialogResult = DialogResult.OK;
-                Button cancel = MakeBarButton("取消", false);
-                cancel.DialogResult = DialogResult.Cancel;
-                Panel buttons = MakeDialogButtons(ok, cancel);
-                dlg.Controls.Add(buttons);
-                dlg.AcceptButton = ok;
-                dlg.CancelButton = cancel;
-                dlg.ResumeLayout(true);
-                if (dlg.ShowDialog(this) != DialogResult.OK) return;
-                string text = box.Text;
-                if (string.IsNullOrWhiteSpace(text)) return;
-                ParseResult r = CoordinateParser.Parse(text);
-                foreach (CiePoint p in r.Points) _points.Add(p);
-                foreach (string w in r.Warnings) AddMessage(w);
-                foreach (string e in r.Errors) AddMessage("⚠ " + e);
-                UpdateTables();
-                ShowRelevantTab();
-                ScheduleRender();
-                SetStatus("已输入 " + r.Points.Count + " 个色坐标点。");
-            }
-        }
-
         private string Prompt(string title, string defaultValue)
         {
             using (Form dlg = CreateDialog(title, new Size(360, 110)))
@@ -1467,19 +1441,90 @@ namespace CIE1931xy
 
         // ================================================================ 样式交互
 
+        private void EditAxisTitles()
+        {
+            bool xy = _style.Kind == DiagramKind.Xy1931;
+            using (Form dlg = CreateDialog("坐标轴名称与间距", new Size(480, 340)))
+            {
+                dlg.MinimumSize = new Size(400, 300);
+                Label tip = new Label();
+                tip.Dock = DockStyle.Top;
+                tip.Height = 70;
+                tip.Padding = new Padding(12, 8, 12, 8);
+                tip.Text = "名称留空使用当前图型的默认名称；间距表示标题与刻度文字之间的距离，数值越大越远。预览和图片导出同步。";
+                tip.SizeChanged += delegate { FitWrappedLabel(tip); };
+                tip.FontChanged += delegate { FitWrappedLabel(tip); };
+                tip.DpiChangedAfterParent += delegate { FitWrappedLabel(tip); };
+                dlg.Controls.Add(tip);
+
+                FlowLayoutPanel fields = new FlowLayoutPanel();
+                fields.Dock = DockStyle.Fill;
+                fields.FlowDirection = FlowDirection.TopDown;
+                fields.WrapContents = false;
+                fields.AutoScroll = true;
+                fields.Padding = new Padding(12, 4, 12, 4);
+                fields.Layout += delegate { FitStyleRows(fields); };
+
+                TextBox titleX = new TextBox();
+                titleX.Name = "XAxisTitle";
+                titleX.MaxLength = 80;
+                titleX.PlaceholderText = PlotSpace.AxisLabelX(_style.Kind);
+                titleX.Text = xy ? _style.XyAxisTitleX : _style.UvAxisTitleX;
+                TextBox titleY = new TextBox();
+                titleY.Name = "YAxisTitle";
+                titleY.MaxLength = 80;
+                titleY.PlaceholderText = PlotSpace.AxisLabelY(_style.Kind);
+                titleY.Text = xy ? _style.XyAxisTitleY : _style.UvAxisTitleY;
+                NumericUpDown gapX = MakeNumber(0, 80, (int)_style.AxisTitleGapX);
+                gapX.Name = "XAxisGap";
+                gapX.Increment = 2;
+                NumericUpDown gapY = MakeNumber(0, 80, (int)_style.AxisTitleGapY);
+                gapY.Name = "YAxisGap";
+                gapY.Increment = 2;
+                fields.Controls.Add(MakeRow("横轴名称", titleX));
+                fields.Controls.Add(MakeRow("纵轴名称", titleY));
+                fields.Controls.Add(MakeRow("横轴间距", gapX));
+                fields.Controls.Add(MakeRow("纵轴间距", gapY));
+                dlg.Controls.Add(fields);
+                fields.BringToFront();
+
+                Button ok = MakeBarButton("应用", true);
+                ok.DialogResult = DialogResult.OK;
+                Button cancel = MakeBarButton("取消", false);
+                cancel.DialogResult = DialogResult.Cancel;
+                Button reset = MakeBarButton("恢复默认", false);
+                reset.Click += delegate { titleX.Text = ""; titleY.Text = ""; gapX.Value = 16; gapY.Value = 16; };
+                FlowLayoutPanel buttons = (FlowLayoutPanel)MakeDialogButtons(ok, cancel);
+                reset.Margin = new Padding(0, 0, ButtonSpacing, 0);
+                buttons.Controls.Add(reset);
+                dlg.Controls.Add(buttons);
+                dlg.AcceptButton = ok;
+                dlg.CancelButton = cancel;
+                dlg.ResumeLayout(true);
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                if (xy) { _style.XyAxisTitleX = titleX.Text.Trim(); _style.XyAxisTitleY = titleY.Text.Trim(); }
+                else { _style.UvAxisTitleX = titleX.Text.Trim(); _style.UvAxisTitleY = titleY.Text.Trim(); }
+                _style.AxisTitleGapX = (double)gapX.Value;
+                _style.AxisTitleGapY = (double)gapY.Value;
+                ScheduleRender();
+                SetStatus("坐标轴名称与间距已更新，预览和图片导出同步。");
+            }
+        }
+
         private void OnStyleChanged()
         {
             if (_suppressUiEvents) return;
-            // 位图底图的坐标轴是烘焙在图片里的，无法改变范围；手动轴范围时自动切到矢量背景
+            _style.SetBlackBackground(_chkBlackBackground.Checked);
+            _menuBlackBackground.Checked = _chkBlackBackground.Checked;
+            _canvas.BackColor = _style.Background;
             _style.ShowBlackbody = _chkBlackbody.Checked;
             _style.ShowGrid = _chkGrid.Checked;
+            _style.ShowClosingLine = _chkReferenceLine.Checked;
             _style.ShowWavelengthLabels = _chkWavelength.Checked;
             _style.ShowLegend = _chkLegend.Checked;
             _style.ShowPointLabels = _chkLabels.Checked;
-            // 位图底图：黑体线开关直接决定用哪张底图（原版带烘焙轨迹的那张 / 干净的那张），
-            // 位图模式下不再叠加计算版轨迹，避免两条曲线重叠；矢量模式则由渲染器按开关现算。
-            _style.BitmapWithBlackbody = _style.ShowBlackbody;
             _style.Bounds = FixedBounds();
+            UpdateReferenceLineState();
             ScheduleRender();
         }
 
@@ -1488,43 +1533,22 @@ namespace CIE1931xy
             if (_suppressUiEvents) return;
             bool uv = _cmbKind.SelectedIndex == 1;
             _style.Kind = uv ? DiagramKind.Uv1976 : DiagramKind.Xy1931;
-            _suppressUiEvents = true;
-            int keep = _cmbBackground.SelectedIndex;
-            _cmbBackground.Items.Clear();
-            if (uv)
-            {
-                // 1976 图没有位图底图，只保留“矢量背景”
-                _cmbBackground.Items.Add("矢量背景");
-                _cmbBackground.SelectedIndex = 0;
-                _style.UseBitmapBackground = false;
-            }
-            else
-            {
-                _cmbBackground.Items.Add("位图底图");
-                _cmbBackground.Items.Add("矢量背景");
-                _cmbBackground.SelectedIndex = keep < 2 ? keep : 0;
-                _style.UseBitmapBackground = _cmbBackground.SelectedIndex == 0;
-            }
-            _suppressUiEvents = false;
             _style.Bounds = FixedBounds();
+            UpdateReferenceLineState();
             ScheduleRender();
         }
 
-        private void OnBackgroundChanged()
+        private void UpdateReferenceLineState()
         {
-            if (_suppressUiEvents) return;
-            _style.UseBitmapBackground = _cmbBackground.SelectedIndex == 0;
-            ScheduleRender();
+            bool xy = _style.Kind == DiagramKind.Xy1931;
+            _chkReferenceLine.Enabled = xy;
+            _menuReferenceLine.Enabled = xy;
+            _menuReferenceLine.Checked = _chkReferenceLine.Checked;
         }
 
         private void ToggleKind()
         {
             _cmbKind.SelectedIndex = _cmbKind.SelectedIndex == 0 ? 1 : 0;
-        }
-
-        private void ToggleBackground()
-        {
-            _cmbBackground.SelectedIndex = _cmbBackground.SelectedIndex == 0 ? 1 : 0;
         }
 
         private void ToggleBlackbody()
@@ -1534,7 +1558,7 @@ namespace CIE1931xy
 
         private void ToggleCheck(CheckBox chk)
         {
-            if (chk != null) chk.Checked = !chk.Checked;
+            if (chk != null && chk.Enabled) chk.Checked = !chk.Checked;
         }
 
         private void ScheduleRender()
@@ -1692,11 +1716,11 @@ namespace CIE1931xy
         {
             using (SaveFileDialog dlg = new SaveFileDialog())
             {
-                dlg.Filter = "PNG 图片 (*.png)|*.png|TIFF 图片 (*.tif)|*.tif|SVG 矢量图 (*.svg)|*.svg";
+                dlg.Filter = "PNG 位图 (*.png)|*.png|TIFF 位图 (*.tif)|*.tif|SVG 矢量图 (*.svg)|*.svg";
                 dlg.FilterIndex = 1;
                 dlg.FileName = _lastExportName;
                 dlg.OverwritePrompt = true;
-                dlg.Title = "导出图片（PNG / TIFF / SVG）";
+                dlg.Title = "导出图片（位图 PNG/TIFF · 矢量 SVG）";
                 if (dlg.ShowDialog(this) != DialogResult.OK) return;
                 ApplyExportName(dlg.FileName);
                 DiagramStyle exportStyle = _style.Clone();
@@ -1799,13 +1823,18 @@ namespace CIE1931xy
         private void ShowHelp()
         {
             MessageBox.Show(this,
-                "1. 导入数据：文件 → 导入光谱文件 / 导入色坐标文件，或把 CSV/TXT 直接拖进窗口，或 Ctrl+V 粘贴。\n" +
+                "1. 导入数据：左上「导入光谱」打开文件，「输入数据」可输入或粘贴光谱/坐标；也可拖放 CSV/TXT 或 Ctrl+V 直接粘贴。\n" +
                 "   光谱格式：波长 强度（逗号/分号/Tab/空格分隔均可，自动识别表头与备注列）；\n" +
                 "   坐标格式：名称,x,y（表头含 u'/v' 时按 1976 UCS 解析）。\n" +
-                "2. 图型：顶部「图型」可在 CIE 1931 xy 与 CIE 1976 u'v' 之间切换。\n" +
-                "3. 背景：「位图底图」= 原版程序的背景图；「矢量背景」= 程序实时计算的真彩色背景，导出的 SVG 是纯矢量。\n" +
+                "   「输入数据」可自动识别或指定色坐标/光谱；Ctrl+Shift+O 打开色坐标输入。\n" +
+                "2. 图型：左下「图型」可在 CIE 1931 xy 与 CIE 1976 u'v' 之间切换。\n" +
+                "   「坐标轴设置」可分别修改横、纵轴标题与间距；名称留空恢复图型默认名称，间距默认 16。\n" +
+                "3. 预览：统一采用矢量绘图，网格和标注可独立开关；导出格式独立，可选 PNG/TIFF 位图或 SVG 矢量图。\n" +
+                "   「黑色背景」开启为纯黑、关闭为纯白；预览和 PNG/TIFF/SVG 导出同步，坐标轴与文字配色随背景调整。\n" +
                 "4. 黑体线：实体按钮「黑体线」开/关（也可以用 Ctrl+P）。\n" +
-                "5. 导出：图片固定 1400×1400 像素（DPI 越大分辨率越高），无需设置画布大小。\n" +
+                "   参考线：x+y=1，即 z=0；默认隐藏，仅适用于 CIE 1931 xy，按钮同时控制预览及图片导出。\n" +
+                "5. 导出：图片固定 1400×1400 像素，DPI 只改变元数据，不增加像素。\n" +
+                "   无网格图片：关闭「网格」，再导出所需格式即可。\n" +
                 "6. 导出：图片支持 PNG / TIFF / SVG；数据支持结果 CSV 与计算报告 TXT。\n\n" +
                 "经典界面（原版 1.6.0.2 布局）可通过 视图 → 打开经典界面 打开，或启动参数 --classic。",
                 "使用说明", MessageBoxButtons.OK, MessageBoxIcon.Information);

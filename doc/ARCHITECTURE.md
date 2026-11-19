@@ -45,19 +45,37 @@ MainForm 是新版交互协调器，持有 `List<CieCurve>`、`List<CiePoint>` �
 
 新版手工布局在 `BuildUi` 开始暂停布局，全部控件加入后才恢复布局，保证 96dpi 设计尺寸统一缩放；不能在控件尚未加入时触发首次 AutoScale，否则高 DPI 下文字与控件边界会不同步。分割条最小宽度及初始位置、表格初始列宽显式从逻辑单位转成设备像素；表头最小宽度按文字测量，表头和数据行高度自动适应内容。
 
-主工具栏与选中操作栏按内容自动确定高度，宽度不足时换行。同组按钮的横向与纵向间距由 `MainForm.ButtonSpacing` 统一为 6 个逻辑像素，包括换行后的工具栏、显示设置的三行按钮及对话框确定/取消按钮；分组边缘的留白另行维护。显示设置采用可伸缩的两列布局，标签、开关与提示按文字调整尺寸，设置区不足时可纵向滚动。输入坐标、单项改名、批量改名对话框共用独立的 96dpi 初始化与自动布局按钮区；多行坐标提示在宽度、字体或 DPI 变化后重新测量高度。经典窗口仍保持独立的 DpiUnaware 策略。
+数据操作栏位于左侧表格上方，包含「导入光谱 / 输入数据」和「批量改名」两组；图形操作栏位于右侧预览上方，包含「颜色 / 描边」和「导出数据 / 导出图片」两组。`MakeToolbar` 统一两侧的按钮高度、内边距与背景；`AddToolbarGroup` 使用嵌套 FlowLayoutPanel，组内不换行、外层按整组换行。组内间距为 `MainForm.ButtonSpacing`（6 个逻辑像素），组间为其三倍，换行间距为 6；显示设置及对话框按钮仍统一使用 6 个逻辑像素。`UpdateTables` 同步无数据时的按钮禁用状态，图片导出保留空白底图能力。
+
+显示设置采用可伸缩的两列布局，标签、开关与提示按文字调整尺寸，设置区不足时可纵向滚动。统一输入数据、单项改名、批量改名对话框共用独立的 96dpi 初始化与自动布局按钮区；多行提示在宽度、字体或 DPI 变化后重新测量高度。经典窗口仍保持独立的 DpiUnaware 策略。
+
+`InputData` 合并原来的坐标输入与粘贴窗口，数据类型为自动识别、色坐标或光谱；`Ctrl+Shift+O` 打开同一窗口并预选色坐标，`Ctrl+Shift+V` 打开默认输入窗口。`ParsePastedText` 按指定类型或自动判断调用解析器，并统一初始化名称、颜色、描边、形状，更新表格、切换相关页签与请求重绘；主窗口 `Ctrl+V` 读取剪贴板后复用该方法。经典解析与计算未改。
 
 `UI/RoundedControls.cs` 为新版按钮、按钮式开关、下拉框与数值输入提供 4 个逻辑像素的小圆角，圆角和描边随 DPI 缩放。按钮/开关只替换绘制，沿用 WinForms 输入、自动尺寸、DialogResult 与可访问性；原生输入控件只补绘外框。共享绘制保留悬停、按下、禁用和键盘焦点提示。经典 Form1 不使用这些控件。
 
 `Core/Rendering/PlotCanvas.cs` 定义 `IPlotCanvas` 和矩形/对齐等绘制协议；`GdiCanvas` 与 `SvgCanvas` 是两种输出。`DiagramRenderer` 接收样式和模型，完成布局、坐标映射、背景、轴、光谱边界、黑体、数据标记及图例，避免各导出格式自行计算点位置。
 
-位图模式只在 xy 下生效：原图 684×732，内部轴矩形左上 (59,12)、宽 600、高 675；映射固定为 x=0–0.8、y=0–0.9。图像整体缩放后必须同步缩放内部轴矩形，否则描点会整体偏移。经典 Form1 也使用该绘图原点，不要依据 DiagramMapping 中过时的“原点恒为零”注释修改。
+新版 `MainForm.ApplyStyleDefaults` 固定 `UseBitmapBackground=false`，xy/u'v' 均使用可编辑的矢量绘图，不再提供位图/矢量背景类型选择、切换菜单或新版 Ctrl+B。设置区说明统一矢量绘图便于独立控制网格和标注，导出仍可选择 PNG/TIFF 位图或 SVG 矢量图。预览仍由 GDI 渲染为 Bitmap 供 PictureBox 显示，并非新增 SVG 浏览器控件；SVG 导出使用同一绘图协议输出矢量元素。
+
+「黑色背景」是独立的画布颜色开关，不改变背景绘图类型。`DiagramStyle.SetBlackBackground` 同步纯白/纯黑画布、坐标轴、刻度文字、网格、参考线、轮廓与图例边框颜色，默认白底；图例面板使用当前背景色。波长与数据标签在黑底模式下按所在区域的底色选黑字或白字，黑体线及色域颜色场仍使用原有颜色。按钮与视图菜单同步，切换图型保留背景选择，预览与 PNG/TIFF/SVG 读取同一份样式。
+
+底层位图兼容分支只在 xy 下生效，仍由 SelfTest 覆盖：原图 684×732，内部轴矩形左上 (59,12)、宽 600、高 675；映射固定为 x=0–0.8、y=0–0.9。图像整体缩放后必须同步缩放内部轴矩形，否则描点会整体偏移。经典 Form1 也使用该绘图原点，不要依据 DiagramMapping 中过时的“原点恒为零”注释修改。
 
 矢量模式由 `PlotSpace` 做 xy/u'v' 互转、光谱边界转换及数据到像素映射。UI 通过 `FixedBounds` 固定 xy 为 0–0.8 / 0–0.9，u'v' 为两轴 0–0.65；底层类型保留 Bounds 能力不等于当前 UI 支持轴范围编辑。
 
 矢量图层顺序：xy 的 x+y=1 参考线、网格、真彩背景、边框与坐标轴、光谱轨迹与波长标注、可选 sRGB 三角、黑体线、曲线标记/独立坐标点、图例。位图已有网格、轴和波长文字，不重复绘制这些图层；黑体开关直接选择两张底图。
 
-`ChromaBackground` 计算并缓存真彩位图，屏幕和 PNG/TIFF 使用该位图；SVG 矢量模式采样为最多 160 列色块，按光谱多边形 clipPath 裁剪并重叠色块防缝。矢量色块是色彩近似，不代表每个像素都与预览相同。
+新版「参考线」按钮绑定 `DiagramStyle.ShowClosingLine`，仅控制浅灰 x+y=1（z=0）直线，默认隐藏；不控制光谱轨迹、色域边界或紫线。按钮与视图菜单同步状态，xy 下启用、u'v' 下禁用并保留选择。预览与 PNG/TIFF/SVG 导出共用该样式；底层保留该字段原有默认值，MainForm 单独设置新版默认值。
+
+新版网格按钮始终可用，`OnStyleChanged` 直接同步 `ShowGrid`，切换图型保留设置；原来针对位图背景的网格禁用逻辑与偏好缓存已移除。无网格 PNG/TIFF/SVG 仅需关闭网格后选择输出格式。
+
+`MainForm.EditAxisTitles` 在共用 DPI 对话框中编辑当前图型的横、纵轴标题及间距。`DiagramStyle` 分别保存 xy/u'v' 的标题覆盖值，空值使用 `PlotSpace` 默认名称；两种图型共用 `AxisTitleGapX/Y`（默认 16，UI 范围 0–80），应用后更新，取消不修改。
+
+`DiagramRenderer.MeasureAxisLayout` 通过 `IPlotCanvas.MeasureText` 测量刻度和标题，间距从刻度文字的外缘起算，并随 FontScale 缩放；据此预留左侧和底部边距。横轴标题居中，纵轴标题整体旋转 -90°，长标题按可用空间缩小字号，避免文字重叠或裁切。GDI 与 SVG 使用同一布局逻辑。布局改变只影响绘图区位置与尺寸，不改变数据范围；`LastTransform` 在位图与矢量分支完成布局后统一保存，画布命中应使用最新变换，不复用固定像素边界。
+
+`ChromaBackground` 计算并缓存真彩位图，屏幕和 PNG/TIFF 使用该位图。SVG 单独从无掩码颜色场 `SampleColor` 采样，不读取已按像素裁掉边缘的透明位图，防止边界色块缺失；两种输出共用相同的 XYZ→sRGB 与最大通道归一化公式。
+
+SVG 背景采用 257 个横向颜色样本与 512–2048 条细扫描带，每条带用标准 SVG linearGradient 连续插值；RGB 各通道误差不超过一个 8 位色阶时省略中间色标，以控制体积。扫描带完全不透明，内部矩形用 crispEdges 防止拼接抗锯齿露出底层网格；边界由 geometricPrecision 的 clipPath path 单独裁剪。裁剪路径与光谱描边共用 `AppendSmoothPath` 的二次贝塞尔曲线，紫线用直线闭合，避免像素阶梯和轮廓不一致。纵向仍为细带近似，SVG 与逐像素预览不保证逐像素相同；不使用内嵌 PNG、SVG meshgradient 或额外渲染依赖。
 
 `Core/AppResources.cs` 使用 ManifestResourceStream 加载两张底图与图标，资源逻辑名在 csproj 显式声明。Bitmap.Clone 避免按目标 DPI 再绘制导致的放大裁切；改文件名须同步 csproj 与加载名。
 
@@ -70,8 +88,8 @@ UI 图片导出前克隆 DiagramStyle 并关闭 HighlightSelection。Exporter �
 | 输出 | 实现与限制 |
 | --- | --- |
 | PNG/TIFF | GDI 画布先按 96DPI 渲染，再设置目标 DPI 元数据；UI 固定 1400×1400，不按 DPI 放大像素 |
-| SVG 矢量背景 | 色块、clipPath、text、线和标记；不含 image 元素 |
-| SVG 位图背景 | SvgCanvas.DrawImage 内嵌 base64 PNG，其上的数据标记仍是矢量 |
+| SVG 矢量背景 | linearGradient、扫描带、平滑 clipPath、text、线和标记；不含 image 元素 |
+| SVG 位图兼容分支 | 仅底层兼容/自检使用；SvgCanvas.DrawImage 内嵌 base64 PNG，新版 UI 不进入该分支 |
 | CSV | UTF-8 BOM；曲线 XYZ/xy/u'v'/峰值/CCT 等，独立点以 Y=1 反推 XYZ；有限显示精度 |
 | TXT | UTF-8 BOM；公式和结果，旧“1nm 采样求和”文字没有表达任意输入网格 |
 

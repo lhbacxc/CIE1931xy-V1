@@ -58,8 +58,8 @@ flowchart LR
 
 - 经典 `CieMath` 处理 1nm/5nm，使用 VB 兼容取整和 G15 文本格式；新版 `Colorimetry` 支持 CMF 插值，默认逐点求和、不归一、不做经典四位取整。
 - 梯形积分与可选 Y=100 归一函数存在，但默认计算链路及 UI 没有调用它，也没有标准光源选择入口。
-- 位图 xy 必须按底图自身轴矩形映射；u'v' 必须使用矢量背景。UI 范围固定，不要按历史手动/自动轴范围说明改回旧行为。
-- UI 导图是 1400×1400 px，DPI 仅为元数据；自检导图是 900×900 px。位图 SVG 含 PNG，矢量背景 SVG 才不含位图。
+- 新版工作台的 xy/u'v' 统一使用矢量绘图，已移除位图/矢量背景切换及新版 Ctrl+B；UI 范围固定。经典底图与底层兼容分支的位图 xy 仍须按底图自身轴矩形映射。
+- UI 导图是 1400×1400 px，DPI 仅为元数据；自检导图是 900×900 px。新版可导出 PNG/TIFF，SVG 不内嵌 PNG；底层自检仍覆盖可内嵌 PNG 的位图兼容分支。
 - GoldenTests 不覆盖新版完整流程，也不验证 UI 像素；自检不验证 TIFF，文件大小通过不能证明视觉一致。
 
 ## 项目约定与常见任务
@@ -92,9 +92,11 @@ codegraph status .
 | 经典算法兼容 | `Core/SpectralInput.cs`、`Core/CieMath.cs`、`Core/VbText.cs`；配套 GoldenTests |
 | 黑体公式与经典叠加样式 | `Core/PlanckianLocus.cs`、`Core/PlanckianOverlay.cs` |
 | 图层、标记、图例、字号与坐标映射 | `Core/Rendering/DiagramRenderer.cs`、`PlotSpace.cs` |
-| 真彩色域与矢量背景色块 | `Core/Rendering/ChromaBackground.cs`、`SvgCanvas.cs` |
+| 真彩色域与 SVG 渐变、裁剪 | `Core/Rendering/ChromaBackground.cs`、`SvgCanvas.cs` |
 | 导出字段、DPI 与像素尺寸 | `Core/Export/Exporter.cs` 和 `MainForm` 的 ExportImage/ExportWidth/ExportHeight |
 | 新版布局、交互、选择 | `MainForm.cs`：BuildUi、BuildActionBar、CanvasMouseClick、BatchRename |
+| 坐标轴标题、间距与留白 | `MainForm.cs`：EditAxisTitles；`Core/Rendering/DiagramRenderer.cs`：MeasureAxisLayout、DrawAxisTitles |
+| 黑白画布背景与文字对比 | `MainForm.cs`：OnStyleChanged；`Core/Rendering/DiagramRenderer.cs`：SetBlackBackground、LabelColor、DrawLegend |
 | 经典布局、双语文本 | `Form1.cs`、`Form1.Designer.cs`、`Core/CieData.cs` |
 | 构建、资源嵌入、版本 | `./build.ps1` 与主工程 csproj |
 

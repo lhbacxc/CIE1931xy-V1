@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -68,55 +69,93 @@ namespace CIE1931xy.Core.Rendering
             // 用二次贝塞尔把折线画成光滑曲线（顶点取相邻点中点），
             // 否则放大 SVG 会看到一段段的直线接缝。
             StringBuilder path = new StringBuilder();
-            path.Append("M ").Append(F(xs[0])).Append(' ').Append(F(ys[0]));
-            for (int i = 1; i + 1 < xs.Length; i++)
-            {
-                double mx = (xs[i] + xs[i + 1]) / 2.0;
-                double my = (ys[i] + ys[i + 1]) / 2.0;
-                path.Append(" Q ").Append(F(xs[i])).Append(' ').Append(F(ys[i]))
-                    .Append(' ').Append(F(mx)).Append(' ').Append(F(my));
-            }
-            path.Append(" L ").Append(F(xs[xs.Length - 1])).Append(' ').Append(F(ys[ys.Length - 1]));
+            AppendSmoothPath(path, xs, ys, xs.Length, 1.0);
             _body.Append("<path d=\"").Append(path).Append("\" fill=\"none\" stroke=\"")
                  .Append(Col(color)).Append("\" stroke-width=\"").Append(F(width * _scale))
                  .Append("\" stroke-linejoin=\"round\" stroke-linecap=\"round\"").Append(Opacity(color)).Append("/>\n");
         }
 
-        /// <summary>SVG 里用矢量色块拼出真彩背景（不用 base64 PNG）。</summary>
-        /// <summary>
-        /// 真彩背景：用矢量色块拼出渐变，并用 &lt;clipPath&gt; 按光谱轨迹多边形裁掉外侧，
-        /// 这样边缘是平滑的矢量曲线，不会出现阶梯状锯齿（早期版本没裁剪，边缘就是阶梯）。
-        /// </summary>
-        public void FillChromaCells(Color[] colors, int cols, int rows, double x, double y, double w, double h,
-                                    float[] clipXs, float[] clipYs)
+        private static void AppendSmoothPath(StringBuilder path, float[] xs, float[] ys, int count, double scale)
         {
-            if (colors == null || cols <= 0 || rows <= 0) return;
+            path.Append("M ").Append(F(xs[0] * scale)).Append(' ').Append(F(ys[0] * scale));
+            for (int i = 1; i + 1 < count; i++)
+            {
+                double mx = (xs[i] + xs[i + 1]) / 2.0;
+                double my = (ys[i] + ys[i + 1]) / 2.0;
+                path.Append(" Q ").Append(F(xs[i] * scale)).Append(' ').Append(F(ys[i] * scale))
+                    .Append(' ').Append(F(mx * scale)).Append(' ').Append(F(my * scale));
+            }
+            path.Append(" L ").Append(F(xs[count - 1] * scale)).Append(' ').Append(F(ys[count - 1] * scale));
+        }
+
+        /// <summary>以连续横向渐变和细扫描带填充颜色场，由平滑光谱轮廓裁剪；不嵌入位图。</summary>
+        public void FillChromaGradients(Color[] colors, int cols, int rows, double x, double y, double w, double h,
+                                       float[] clipXs, float[] clipYs)
+        {
+            if (colors == null || cols < 2 || rows <= 0 || colors.Length != cols * rows) return;
             string clipId = "chroma" + (++_clipSeq).ToString(CultureInfo.InvariantCulture);
             bool useClip = clipXs != null && clipYs != null && clipXs.Length >= 3 && clipXs.Length == clipYs.Length;
+            _body.Append("<defs>\n");
             if (useClip)
             {
-                _body.Append("<clipPath id=\"").Append(clipId).Append("\"><polygon points=\"");
-                for (int i = 0; i < clipXs.Length; i++)
-                {
-                    if (i > 0) _body.Append(' ');
-                    _body.Append(F(clipXs[i] * _scale)).Append(',').Append(F(clipYs[i] * _scale));
-                }
-                _body.Append("\"/></clipPath>\n");
-                _body.Append("<g clip-path=\"url(#").Append(clipId).Append(")\">\n");
+                int count = clipXs.Length;
+                if (clipXs[0] == clipXs[count - 1] && clipYs[0] == clipYs[count - 1]) count--;
+                _body.Append("<clipPath id=\"").Append(clipId).Append("\" clipPathUnits=\"userSpaceOnUse\"><path d=\"");
+                AppendSmoothPath(_body, clipXs, clipYs, count, _scale);
+                _body.Append(" Z\" shape-rendering=\"geometricPrecision\"/></clipPath>\n");
             }
-
-            double cw = w / cols, ch = h / rows;
             for (int r = 0; r < rows; r++)
             {
-                for (int c = 0; c < cols; c++)
+                _body.Append("<linearGradient id=\"").Append(clipId).Append('-').Append(r)
+                    .Append("\" gradientUnits=\"userSpaceOnUse\" x1=\"").Append(F(x * _scale))
+                    .Append("\" x2=\"").Append(F((x + w) * _scale))
+                    .Append("\" y1=\"0\" y2=\"0\" color-interpolation=\"sRGB\">\n");
+                List<int> stops = new List<int> { 0 };
+                SimplifyGradient(colors, r * cols, 0, cols - 1, stops);
+                foreach (int c in stops)
                 {
                     Color col = colors[r * cols + c];
-                    if (col.A == 0) continue;
-                    // 相邻色块略微重叠，避免浮点误差留下发丝缝
-                    FillRect(col, x + c * cw - 0.06, y + r * ch - 0.06, cw + 0.2, ch + 0.2);
+                    _body.Append("<stop offset=\"").Append((c / (double)(cols - 1)).ToString("0.######", CultureInfo.InvariantCulture))
+                        .Append("\" stop-color=\"").Append(Col(col)).Append("\"/>\n");
                 }
+                _body.Append("</linearGradient>\n");
             }
-            if (useClip) _body.Append("</g>\n");
+            _body.Append("</defs>\n<g");
+            if (useClip) _body.Append(" clip-path=\"url(#").Append(clipId).Append(")\"");
+            _body.Append(">\n");
+            double ch = h / rows;
+            for (int r = 0; r < rows; r++)
+            {
+                // 不透明扫描带覆盖整个裁剪区；关闭内部边缘抗锯齿，防止露出底层网格。
+                _body.Append("<rect x=\"").Append(F(x * _scale)).Append("\" y=\"").Append(F((y + r * ch) * _scale))
+                    .Append("\" width=\"").Append(F(w * _scale)).Append("\" height=\"").Append(F((ch + 0.01) * _scale))
+                    .Append("\" fill=\"url(#").Append(clipId).Append('-').Append(r)
+                    .Append(")\" stroke=\"none\" shape-rendering=\"crispEdges\"/>\n");
+            }
+            _body.Append("</g>\n");
+        }
+
+        private static void SimplifyGradient(Color[] colors, int row, int first, int last, List<int> stops)
+        {
+            // 仅省略可由端点插值还原的色标，RGB 各通道误差不超过一个 8 位色阶。
+            Color a = colors[row + first], b = colors[row + last];
+            double maxError = 1.0;
+            int split = -1;
+            for (int c = first + 1; c < last; c++)
+            {
+                double t = (c - first) / (double)(last - first);
+                Color color = colors[row + c];
+                double error = Math.Max(Math.Abs(color.R - (a.R + (b.R - a.R) * t)),
+                    Math.Max(Math.Abs(color.G - (a.G + (b.G - a.G) * t)),
+                             Math.Abs(color.B - (a.B + (b.B - a.B) * t))));
+                if (error > maxError) { maxError = error; split = c; }
+            }
+            if (split >= 0)
+            {
+                SimplifyGradient(colors, row, first, split, stops);
+                SimplifyGradient(colors, row, split, last, stops);
+            }
+            else stops.Add(last);
         }
 
         public void DrawPolygon(Color color, float width, float[] xs, float[] ys)

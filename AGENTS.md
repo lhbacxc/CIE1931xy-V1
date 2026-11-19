@@ -35,7 +35,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - 主入口 `./src/CIE1931xy.Rebuilt/Program.cs`；默认 `MainForm`，`--classic` 使用 `Form1`，`--selftest` 调用 `Core/SelfTest.cs`。
 - 经典链路 `Form1 → SpectralInput → CieMath → VbText` 保留 VB 语义、1nm/5nm 和四位小数取整；改动须检查 oracle。
 - 新版链路 `MainForm → SpectrumCsvParser/CoordinateParser → Colorimetry → Model → DiagramRenderer/Exporter` 默认逐点求和、未归一、未做经典四位取整；不要把两条链路混同。
-- 渲染通过 `IPlotCanvas` 共用 GDI 与 SVG 输出；新增绘制能力须核对两种实现。位图 SVG 可含 PNG，矢量背景 SVG 使用裁剪色块。
+- 新版工作台的 xy/u'v' 统一使用矢量绘图，PNG/TIFF/SVG 仅为导出格式选项，不恢复位图背景选择或新版 Ctrl+B。渲染通过 `IPlotCanvas` 共用 GDI 与 SVG 输出；新增绘制能力须核对两种实现。新版 SVG 使用渐变扫描带与平滑轮廓裁剪、不内嵌 PNG；背景不能复用像素透明掩码，修复后须核对放大显示的接缝与边界缺口。底层位图兼容分支及经典底图保留。
 - 位图固定 684×732，轴矩形为 (59,12) 起、600×675；对应 xy 范围 0–0.8 / 0–0.9。坐标映射不可使用数据包络替代该范围。
 - 新版 PerMonitorV2 与经典 DpiUnaware 分别维护；不能直接把经典窗口改为新版缩放方式并宣称像素兼容。
 - 新版手工布局必须在全部控件加入后才恢复布局并执行首次 DPI 缩放；按钮、标签、设置行和对话框要按文字与可用空间布局。具体约束见架构说明的 DPI 章节。

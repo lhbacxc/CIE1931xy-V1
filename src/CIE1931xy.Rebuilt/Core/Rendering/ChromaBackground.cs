@@ -93,28 +93,37 @@ namespace CIE1931xy.Core.Rendering
                         continue;
                     }
 
-                    double X = cx / cy;
-                    double Y = 1.0;
-                    double Z = (1.0 - cx - cy) / cy;
-                    double r = SrgbMatrix[0, 0] * X + SrgbMatrix[0, 1] * Y + SrgbMatrix[0, 2] * Z;
-                    double g = SrgbMatrix[1, 0] * X + SrgbMatrix[1, 1] * Y + SrgbMatrix[1, 2] * Z;
-                    double b = SrgbMatrix[2, 0] * X + SrgbMatrix[2, 1] * Y + SrgbMatrix[2, 2] * Z;
-
-                    if (r < 0) r = 0;
-                    if (g < 0) g = 0;
-                    if (b < 0) b = 0;
-                    double max = Math.Max(r, Math.Max(g, b));
-                    if (max > 1e-12) { r /= max; g /= max; b /= max; }
-
-                    buffer[idx + 2] = SrgbChannel(r);
-                    buffer[idx + 1] = SrgbChannel(g);
-                    buffer[idx + 0] = SrgbChannel(b);
+                    Color color = XyColor(cx, cy);
+                    buffer[idx + 2] = color.R;
+                    buffer[idx + 1] = color.G;
+                    buffer[idx + 0] = color.B;
                     buffer[idx + 3] = 255;
                 }
             }
             System.Runtime.InteropServices.Marshal.Copy(buffer, 0, data.Scan0, buffer.Length);
             bmp.UnlockBits(data);
             return bmp;
+        }
+
+        /// <summary>独立采样不带像素掩码的颜色场，SVG 由矢量轮廓统一裁剪。</summary>
+        public static Color SampleColor(DiagramKind kind, double dx, double dy)
+        {
+            double x, y;
+            if (!PlotSpace.FromDiagram(kind, dx, dy, out x, out y)) return Color.Black;
+            return XyColor(x, Math.Max(y, 1e-6));
+        }
+
+        private static Color XyColor(double x, double y)
+        {
+            double X = x / y;
+            double Y = 1.0;
+            double Z = (1.0 - x - y) / y;
+            double r = Math.Max(0, SrgbMatrix[0, 0] * X + SrgbMatrix[0, 1] * Y + SrgbMatrix[0, 2] * Z);
+            double g = Math.Max(0, SrgbMatrix[1, 0] * X + SrgbMatrix[1, 1] * Y + SrgbMatrix[1, 2] * Z);
+            double b = Math.Max(0, SrgbMatrix[2, 0] * X + SrgbMatrix[2, 1] * Y + SrgbMatrix[2, 2] * Z);
+            double max = Math.Max(r, Math.Max(g, b));
+            if (max > 1e-12) { r /= max; g /= max; b /= max; }
+            return Color.FromArgb(SrgbChannel(r), SrgbChannel(g), SrgbChannel(b));
         }
 
         private static byte SrgbChannel(double v)

@@ -29,6 +29,32 @@ namespace CIE1931xy.Core.Rendering
         public bool ShowClosingLine = true;           // y = -x + 1（紫边线，位图上有）
         public double FontScale = 1.0;                // 字号基准（导出大图时由 Exporter 放大，预览保持 1.0）
         public bool HighlightSelection = true;        // 选中高亮（导出时置 false）
+        public bool BlackBackground = false;
+
+        public string XyAxisTitleX = "";
+        public string XyAxisTitleY = "";
+        public string UvAxisTitleX = "";
+        public string UvAxisTitleY = "";
+        public double AxisTitleGapX = 16.0;
+        public double AxisTitleGapY = 16.0;
+
+        public string AxisTitleX
+        {
+            get
+            {
+                string title = Kind == DiagramKind.Xy1931 ? XyAxisTitleX : UvAxisTitleX;
+                return string.IsNullOrWhiteSpace(title) ? PlotSpace.AxisLabelX(Kind) : title;
+            }
+        }
+
+        public string AxisTitleY
+        {
+            get
+            {
+                string title = Kind == DiagramKind.Xy1931 ? XyAxisTitleY : UvAxisTitleY;
+                return string.IsNullOrWhiteSpace(title) ? PlotSpace.AxisLabelY(Kind) : title;
+            }
+        }
 
         public string FontFamily = "Microsoft YaHei UI";
         public double TitleFontSize = 30.0;
@@ -56,6 +82,20 @@ namespace CIE1931xy.Core.Rendering
         public Color BlackbodyColor = Color.FromArgb(0x00, 0x00, 0x00);
         public Color SrgbColor = Color.FromArgb(0x8C, 0x94, 0x9E);
         public Color LegendBorder = Color.FromArgb(0xCC, 0xD2, 0xD9);
+
+        public void SetBlackBackground(bool black)
+        {
+            BlackBackground = black;
+            Background = black ? Color.Black : Color.White;
+            PlotBackground = Background;
+            TextColor = black ? Color.White : Color.FromArgb(0x22, 0x22, 0x22);
+            AxisColor = black ? Color.White : Color.FromArgb(0x35, 0x3A, 0x40);
+            LocusColor = black ? Color.White : Color.FromArgb(0x1A, 0x1A, 0x1A);
+            GridColor = black ? Color.FromArgb(0x3F, 0x3F, 0x46) : Color.FromArgb(0xC9, 0xCF, 0xD6);
+            GridMajorColor = black ? Color.FromArgb(0x62, 0x62, 0x6B) : Color.FromArgb(0x9E, 0xA6, 0xAF);
+            ClosingLineColor = black ? Color.FromArgb(0x8D, 0x8D, 0x99) : Color.FromArgb(0xB4, 0xB9, 0xC0);
+            LegendBorder = black ? Color.FromArgb(0x77, 0x77, 0x77) : Color.FromArgb(0xCC, 0xCC, 0xCC);
+        }
 
         public DiagramStyle Clone()
         {
@@ -87,6 +127,7 @@ namespace CIE1931xy.Core.Rendering
             DiagramStyle s = _style;
             double scale = canvas.PixelScale;
             bool bitmapMode = s.UseBitmapBackground && s.Kind == DiagramKind.Xy1931;
+            _fs = Math.Max(0.85, s.FontScale);
 
             canvas.FillRect(s.Background, 0, 0, width, height);
 
@@ -100,16 +141,19 @@ namespace CIE1931xy.Core.Rendering
             }
             else
             {
-                marginL = width * 0.075;
-                marginR = width * 0.025;
-                marginT = height * 0.040;
-                marginB = height * 0.075;
+                MeasureAxisLayout(canvas, width, height);
+                double pad = 12 * scale;
+                marginL = Math.Max(width * 0.075, _yTickWidth + 10 * scale + pad
+                    + (s.ShowAxisLabels ? _axisGapY + _yTitleSize.Height : 0));
+                marginR = Math.Max(width * 0.025, _xTickWidth / 2 + pad);
+                marginT = Math.Max(height * 0.040, _yTickHeight / 2 + pad);
+                marginB = Math.Max(height * 0.075, 11 * scale + _xTickHeight + pad
+                    + (s.ShowAxisLabels ? _axisGapX + _xTitleSize.Height : 0));
             }
             double availW = Math.Max(10, width - marginL - marginR);
             double availH = Math.Max(10, height - marginT - marginB);
 
             // 字号随画布宽度缩放：预览窗口小时字不至于太大，导出大图时字不会显得很细很小。
-            _fs = Math.Max(0.85, s.FontScale);
 
             AxisBounds b = s.Bounds;
             PlotTransform tr;
@@ -132,7 +176,6 @@ namespace CIE1931xy.Core.Rendering
                 tr = new PlotTransform(new AxisBounds(0, 0.8, 0, 0.9),
                                        (float)(imgL + axLeft * fit), (float)(imgT + axTop * fit),
                                        (float)(axWidth * fit), (float)(axHeight * fit));
-                LastTransform = tr;
             }
             else
             {
@@ -148,6 +191,7 @@ namespace CIE1931xy.Core.Rendering
                 double plotT = marginT + (availH - plotH) / 2.0;
                 tr = new PlotTransform(b, (float)plotL, (float)plotT, (float)plotW, (float)plotH);
             }
+            LastTransform = tr;
 
 
             // --- 绘图区背景
@@ -210,22 +254,20 @@ namespace CIE1931xy.Core.Rendering
         {
             int w = Math.Max(2, (int)Math.Round(tr.Width));
             int h = Math.Max(2, (int)Math.Round(tr.Height));
-            Bitmap bmp = ChromaBackground.Get(_style.Kind, tr.Bounds, w, h);
-
             SvgCanvas svg = canvas as SvgCanvas;
             if (svg != null)
             {
-                // SVG 里用矢量色块拼真彩背景（整张图里所有元素都是矢量，放大不糊）
-                int cols = Math.Min(w, 160);
-                int rows = Math.Max(1, (int)Math.Round(cols * (double)h / w));
+                // 横向由 SVG 渐变连续插值，细扫描带避免二维色块拼接的网格感。
+                const int cols = 257;
+                int rows = Math.Min(2048, Math.Max(512, h * 2));
                 Color[] cells = new Color[cols * rows];
                 for (int r = 0; r < rows; r++)
                 {
-                    int sy = Math.Min(h - 1, (int)((r + 0.5) * h / rows));
+                    double dy = tr.Bounds.YMax - (r + 0.5) / rows * tr.Bounds.Height;
                     for (int c = 0; c < cols; c++)
                     {
-                        int sx = Math.Min(w - 1, (int)((c + 0.5) * w / cols));
-                        cells[r * cols + c] = bmp.GetPixel(sx, sy);
+                        double dx = tr.Bounds.XMin + c / (double)(cols - 1) * tr.Bounds.Width;
+                        cells[r * cols + c] = ChromaBackground.SampleColor(_style.Kind, dx, dy);
                     }
                 }
                 float[] lx, ly;
@@ -233,10 +275,10 @@ namespace CIE1931xy.Core.Rendering
                 float[] clipX = new float[lx.Length];
                 float[] clipY = new float[ly.Length];
                 for (int i = 0; i < lx.Length; i++) { clipX[i] = tr.X(lx[i]); clipY[i] = tr.Y(ly[i]); }
-                svg.FillChromaCells(cells, cols, rows, tr.Left, tr.Top, tr.Width, tr.Height, clipX, clipY);
+                svg.FillChromaGradients(cells, cols, rows, tr.Left, tr.Top, tr.Width, tr.Height, clipX, clipY);
                 return;
             }
-            canvas.DrawImage(bmp, tr.Left, tr.Top, tr.Width, tr.Height);
+            canvas.DrawImage(ChromaBackground.Get(_style.Kind, tr.Bounds, w, h), tr.Left, tr.Top, tr.Width, tr.Height);
         }
 
         // ---------------------------------------------------------------- 网格/坐标
@@ -273,6 +315,39 @@ namespace CIE1931xy.Core.Rendering
         }
 
         private double _fs = 1.0;   // 按画布宽度缩放的字号系数
+        private double _xTickWidth, _xTickHeight, _yTickWidth, _yTickHeight;
+        private double _axisGapX, _axisGapY, _xTitleFont, _yTitleFont;
+        private SizeD _xTitleSize, _yTitleSize;
+
+        private void MeasureAxisLayout(IPlotCanvas canvas, int width, int height)
+        {
+            DiagramStyle s = _style;
+            _xTickWidth = _xTickHeight = _yTickWidth = _yTickHeight = 0;
+            for (double v = s.Bounds.XMin; v <= s.Bounds.XMax + 1e-9; v += 0.1)
+            {
+                SizeD size = canvas.MeasureText(v.ToString("0.0"), s.FontFamily, s.TickFontSize * _fs, false);
+                _xTickWidth = Math.Max(_xTickWidth, size.Width);
+                _xTickHeight = Math.Max(_xTickHeight, size.Height);
+            }
+            for (double v = s.Bounds.YMin; v <= s.Bounds.YMax + 1e-9; v += 0.1)
+            {
+                SizeD size = canvas.MeasureText(v.ToString("0.0"), s.FontFamily, s.TickFontSize * _fs, false);
+                _yTickWidth = Math.Max(_yTickWidth, size.Width);
+                _yTickHeight = Math.Max(_yTickHeight, size.Height);
+            }
+            _axisGapX = Math.Max(0, s.AxisTitleGapX) * _fs * canvas.PixelScale;
+            _axisGapY = Math.Max(0, s.AxisTitleGapY) * _fs * canvas.PixelScale;
+            _xTitleFont = FitAxisTitleFont(canvas, s.AxisTitleX, s.AxisFontSize * _fs, Math.Max(1, width - 24));
+            _yTitleFont = FitAxisTitleFont(canvas, s.AxisTitleY, s.AxisFontSize * _fs, Math.Max(1, height * 0.75));
+            _xTitleSize = canvas.MeasureText(s.AxisTitleX, s.FontFamily, _xTitleFont, false);
+            _yTitleSize = canvas.MeasureText(s.AxisTitleY, s.FontFamily, _yTitleFont, false);
+        }
+
+        private double FitAxisTitleFont(IPlotCanvas canvas, string title, double fontSize, double maxWidth)
+        {
+            SizeD size = canvas.MeasureText(title, _style.FontFamily, fontSize, false);
+            return size.Width > maxWidth ? fontSize * maxWidth / size.Width : fontSize;
+        }
 
         private void DrawAxisTicks(IPlotCanvas canvas, PlotTransform tr)
         {
@@ -301,11 +376,18 @@ namespace CIE1931xy.Core.Rendering
         private void DrawAxisTitles(IPlotCanvas canvas, PlotTransform tr)
         {
             DiagramStyle s = _style;
-            double px = 14 * canvas.PixelScale;
-            canvas.DrawText(PlotSpace.AxisLabelX(s.Kind), s.TextColor, s.FontFamily, s.AxisFontSize * _fs, false,
-                tr.Left + tr.Width / 2, tr.Top + tr.Height + px + 16 * canvas.PixelScale, TextAlignH.Center, TextAlignV.Top, 0);
-            canvas.DrawText(PlotSpace.AxisLabelY(s.Kind), s.TextColor, s.FontFamily, s.AxisFontSize * _fs, false,
-                tr.Left - px - 6 * canvas.PixelScale, tr.Top + tr.Height / 2, TextAlignH.Center, TextAlignV.Middle, 0);
+            double centerX = tr.Left + tr.Width / 2;
+            double maxXWidth = 2 * Math.Max(1, Math.Min(centerX - 12 * canvas.PixelScale,
+                tr.Left + tr.Width + 12 * canvas.PixelScale - centerX));
+            double fontX = FitAxisTitleFont(canvas, s.AxisTitleX, _xTitleFont, maxXWidth);
+            canvas.DrawText(s.AxisTitleX, s.TextColor, s.FontFamily, fontX, false,
+                centerX, tr.Top + tr.Height + 11 * canvas.PixelScale + _xTickHeight + _axisGapX,
+                TextAlignH.Center, TextAlignV.Top, 0);
+            double fontY = FitAxisTitleFont(canvas, s.AxisTitleY, _yTitleFont, Math.Max(1, tr.Height - 24 * canvas.PixelScale));
+            SizeD ySize = canvas.MeasureText(s.AxisTitleY, s.FontFamily, fontY, false);
+            canvas.DrawText(s.AxisTitleY, s.TextColor, s.FontFamily, fontY, false,
+                tr.Left - 10 * canvas.PixelScale - _yTickWidth - _axisGapY - ySize.Height / 2,
+                tr.Top + tr.Height / 2, TextAlignH.Center, TextAlignV.Middle, -90);
         }
 
         // ---------------------------------------------------------------- 轨迹
@@ -450,7 +532,7 @@ namespace CIE1931xy.Core.Rendering
                 float t0x = (float)(px + nx * 2), t0y = (float)(py - ny * 2);
                 float t1x = (float)(px + nx * tick), t1y = (float)(py - ny * tick);
                 canvas.DrawLine(s.LocusColor, 1.6f, t0x, t0y, t1x, t1y);
-                canvas.DrawText(text, s.TextColor, s.FontFamily, s.WavelengthFontSize * _fs, false,
+                canvas.DrawText(text, LabelColor(tr, rect.Left + rect.Width / 2, rect.Top + rect.Height / 2), s.FontFamily, s.WavelengthFontSize * _fs, false,
                     rect.Left + rect.Width / 2.0, rect.Top + rect.Height / 2.0,
                     TextAlignH.Center, TextAlignV.Middle, 0);
             }
@@ -587,9 +669,7 @@ namespace CIE1931xy.Core.Rendering
                                   (float)Math.Max(1.3, 1.8 * canvas.PixelScale));
                 if (s.ShowPointLabels)
                 {
-                    canvas.DrawText(curve.Name, s.TextColor, s.FontFamily, s.LabelFontSize * _fs, false,
-                        px + (s.MarkerSize + 4) * canvas.PixelScale, py - (s.MarkerSize + 3) * canvas.PixelScale,
-                        TextAlignH.Left, TextAlignV.Bottom, 0);
+                    DrawPointLabel(canvas, tr, curve.Name, px, py);
                 }
             }
         }
@@ -615,15 +695,34 @@ namespace CIE1931xy.Core.Rendering
                                   (float)Math.Max(1.3, 1.8 * canvas.PixelScale));
                 if (s.ShowPointLabels)
                 {
-                    canvas.DrawText(pt.Name, s.TextColor, s.FontFamily, s.LabelFontSize * _fs, false,
-                        px + (s.MarkerSize + 4) * canvas.PixelScale, py - (s.MarkerSize + 3) * canvas.PixelScale,
-                        TextAlignH.Left, TextAlignV.Bottom, 0);
+                    DrawPointLabel(canvas, tr, pt.Name, px, py);
                 }
             }
         }
 
         /// <summary>判断像素坐标是否在绘图区内（视野外的数据点不画到框外面去）。</summary>
         /// <summary>两个矩形是否重叠（用于标签避让）。</summary>
+        private void DrawPointLabel(IPlotCanvas canvas, PlotTransform tr, string name, double px, double py)
+        {
+            DiagramStyle s = _style;
+            double x = px + (s.MarkerSize + 4) * canvas.PixelScale;
+            double y = py - (s.MarkerSize + 3) * canvas.PixelScale;
+            SizeD size = canvas.MeasureText(name, s.FontFamily, s.LabelFontSize * _fs, false);
+            canvas.DrawText(name, LabelColor(tr, x + size.Width / 2, y - size.Height / 2),
+                s.FontFamily, s.LabelFontSize * _fs, false, x, y, TextAlignH.Left, TextAlignV.Bottom, 0);
+        }
+
+        private Color LabelColor(PlotTransform tr, double px, double py)
+        {
+            if (!_style.BlackBackground) return _style.TextColor;
+            double dx = tr.Bounds.XMin + (px - tr.Left) / tr.Width * tr.Bounds.Width;
+            double dy = tr.Bounds.YMax - (py - tr.Top) / tr.Height * tr.Bounds.Height;
+            if (!PlotSpace.InsideSpectrum(_style.Kind, dx, dy)) return Color.White;
+            Color color = ChromaBackground.SampleColor(_style.Kind, dx, dy);
+            double brightness = 0.2126 * color.R + 0.7152 * color.G + 0.0722 * color.B;
+            return brightness >= 128 ? Color.Black : Color.White;
+        }
+
         private static bool Overlaps(RectangleD a, RectangleD b)
         {
             double pad = 2.0;
@@ -737,7 +836,7 @@ namespace CIE1931xy.Core.Rendering
                 ? tr.Top + tr.Height - boxH - 10 * canvas.PixelScale
                 : tr.Top + 10 * canvas.PixelScale;
 
-            canvas.FillRect(Color.FromArgb(238, Color.White), x, y, boxW, boxH);
+            canvas.FillRect(Color.FromArgb(238, s.Background), x, y, boxW, boxH);
             canvas.DrawRect(s.LegendBorder, 0.8, x, y, boxW, boxH);
             for (int i = 0; i < names.Count; i++)
             {

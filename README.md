@@ -173,10 +173,8 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 
 经典模式按 DpiUnaware 运行，新版按 PerMonitorV2 运行。从工作台打开经典界面优先启动独立进程，两者 DPI 策略分别维护。
 
-## 源码来源与原版关系
+## 源码来源与致谢
 
-原版 `CIE1931xy.V.1.6.0.2.exe` 与 `CIE1931xy.V.1.6.0.2a(2).exe` 的计算逻辑一致，主要差别是 684×732 底图是否烘焙黑体轨迹。历史 oracle 和像素比对记录见 [逆向工程记录](./doc/REVERSE_ENGINEERING.md)，本项目没有包含原始反射采集器、像素比对脚本或完整外部参考工程。
+本项目基于 [chenhunquan](https://github.com/chenhunquan) 提供的源码开发，在此基础上优化了绘图交互、数据管理与图片导出，并新增箭头方向标注等功能。感谢 chenhunquan 分享源码与相关实现。
 
-本项目的基础源码由 [chenhunquan](https://github.com/chenhunquan) 提供。本仓库在此基础上进行了功能优化与扩展，包括绘图交互、数据管理、图片导出和箭头方向标注等。感谢 chenhunquan 提供基础源码及相关实现，为本项目的后续开发提供了支持。
-
-历史 CIE1931xy 原程序作者为 nicklxg，原程序版权归原作者。本项目保留原版署名及相关历史记录；源码来源与本仓库的后续优化工作分别说明，相关逆向依据与工具链记录见 [逆向工程记录](./doc/REVERSE_ENGINEERING.md)。
+本项目同时保留了历史 CIE1931xy 原程序的经典界面与计算语义。原程序作者为 nicklxg，原程序版权归原作者；原版署名、兼容性验证及逆向过程详见 [逆向工程记录](./doc/REVERSE_ENGINEERING.md)。

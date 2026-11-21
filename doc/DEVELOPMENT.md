@@ -144,7 +144,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 
 公开 Release 提供框架依赖单 exe 与自包含便携 ZIP，校验值放在 SHA256SUMS.txt。先执行 `./build.ps1` 完成源码回归，再分别发布到被忽略的 `./artifacts/releases/<版本>/` 子目录，避免覆盖日常使用的 dist；命令中的版本号须与工程版本及 Git tag 一致。
 
-以下是 v2.0.0 已验证的 PowerShell 命令：
+以下是 v2.1.0 已验证的 PowerShell 命令：
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -158,15 +158,15 @@ $releaseArguments = @(
     '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true',
     '-p:DebugType=None', '-p:DebugSymbols=false', '--nologo'
 )
-& $releaseSdk @releaseArguments '-p:SelfContained=false' '-o' './artifacts/releases/v2.0.0/framework-dependent'
+& $releaseSdk @releaseArguments '-p:SelfContained=false' '-o' './artifacts/releases/v2.1.0/framework-dependent'
 if ($LASTEXITCODE -ne 0) { throw '轻量版发布失败' }
-& $releaseSdk @releaseArguments '-p:SelfContained=true' '-p:EnableCompressionInSingleFile=true' '-o' './artifacts/releases/v2.0.0/self-contained'
+& $releaseSdk @releaseArguments '-p:SelfContained=true' '-p:EnableCompressionInSingleFile=true' '-o' './artifacts/releases/v2.1.0/self-contained'
 if ($LASTEXITCODE -ne 0) { throw '便携版发布失败' }
 ```
 
 自包含 exe 启用内部压缩，首次启动会解包 native 组件；没有启用裁剪，避免 WinForms 动态加载兼容问题。便携 ZIP 内保留所用 .NET runtime 包的 LICENSE.TXT / THIRD-PARTY-NOTICES.TXT，使用带 DOTNET 后缀的文件名，区分原程序版权与运行时许可。
 
-发布前验收实际 exe 的 `--selftest`。确认便携版无需额外运行时应仅给测试子进程设置空的 DOTNET_ROOT / DOTNET_ROOT_X64，并记录 COREHOST_TRACE，不能卸载或修改系统环境；本轮还启动了实际新版窗口，确认进入输入空闲。检查 ZIP 清单、解压后 exe 的 SHA256、上传后下载文件校验值；tag 指向对应源码提交。发布说明见 [v2.0.0](./RELEASE_v2.0.0.md)。
+发布前验收实际 exe 的 `--selftest`。确认便携版无需额外运行时应仅给测试子进程设置空的 DOTNET_ROOT / DOTNET_ROOT_X64，并记录 COREHOST_TRACE，不能卸载或修改系统环境；本轮还启动了实际新版窗口，确认进入输入空闲。检查 ZIP 清单、解压后 exe 的 SHA256、上传后下载文件校验值；tag 指向对应源码提交。当前发布说明见 [v2.1.0](./RELEASE_v2.1.0.md)，首版记录见 [v2.0.0](./RELEASE_v2.0.0.md)。
 
 ### 2026-11-21 首次公开发布验收
 
@@ -338,3 +338,11 @@ Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，SelfTest 通�
 - 截图发现 AutoSize 表格布局把独立 NumericUpDown 缩成零宽，设置 100×26 最小逻辑尺寸修复，并增加数值字段边界检查。样式示意中将点列与箭头分开；使用提示独立固定在滚动区外并按宽度/字体测量，默认窗口增高，小窗口保留设置区滚动。
 - 用已有 bundled sharp/librsvg 实际渲染示例和弯曲 SVG，检查 PNG/SVG 的箭头位置、方向、白色显示、曲线与箭头头部衔接；没有增加工程依赖。README 示例保存为 `./doc/screens/16-arrows-beside-points.png`，临时图、窗口截图、日志与检查程序在忽略的 `./.codegraph/validation/arrows/` 和 `arrows-harness/`。
 - 本地测试版单文件 exe 位于 `./artifacts/arrows/CIE1931xy.exe`，仍需 .NET 8 Desktop Runtime x64；实际测试 exe 自检通过，生成 22 个文件。测试产物不进入 Git，main 与公开 v2.0.0 Release 不由本轮自动合并或替换。README、架构说明、入门指南、AGENTS、箭头设计和 TODO 同步当前分支行为与验证范围。
+
+## 2026-11-21 v2.1.0 合并与发布准备
+
+- 按用户后续授权同步 codex/arrows，再以保留分支历史的合并提交并入 main；工程、主窗口、关于和 TXT 报告版本统一为 2.1.0。源码运行目标仍为 .NET 8，没有新增工程依赖或修改计算口径。
+- README 末尾改为「源码来源与致谢」，正式说明源码由 [chenhunquan](https://github.com/chenhunquan) 提供、本仓库在此基础上优化和扩展，同时保留历史原作者 nicklxg 的署名与记录。用户确认仅作来源声明，不调整自动生成的 GitHub Contributors 列表；不新增维护者权限或改写提交作者。
+- 合并后的 Release 构建为 0 警告、0 错误，两套经典 oracle 各 9/9；基础数值/解析及 41 项箭头自检通过。轻量版与压缩自包含版均使用标准发布参数，两个实际 exe 的 FileVersion / ProductVersion 为 2.1.0.0 / 2.1.0。
+- 两个实际 exe 自检均通过，各输出 22 个文件；隔离系统 .NET 路径后，轻量版提示缺少运行时，便携版自检及 MainForm 启动输入空闲检查通过。没有改动系统运行时或环境变量。
+- 轻量 exe 为 1,091,664 字节，便携 ZIP 为 66,994,657 字节，ZIP 仅含 exe、中文使用说明及 .NET 许可/第三方声明；解压 exe 的 SHA256 与原件一致。产物位于 `./artifacts/releases/v2.1.0/`，临时验证位于 `./.codegraph/validation/release-v2.1.0/`；发布说明见 [v2.1.0](./RELEASE_v2.1.0.md)。

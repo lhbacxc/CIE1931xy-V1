@@ -8,7 +8,7 @@
 
 主入口及 GoldenTests 控制台输出统一 UTF-8，供开发脚本重定向日志使用。编译使用 global.json 约束的 .NET 10 SDK，运行目标仍为 .NET 8；build.ps1 分别寻找 SDK 与匹配目标的运行时宿主，开发工具版本不会自动改变业务计算。
 
-MainForm 是新版交互协调器，持有 `List<CieCurve>`、`List<CiePoint>` 和 `DiagramStyle`；业务数据不经过数据库或文件持久化。曲线包含原始波长/强度、名称、标记样式和结果缓存；坐标点包含 xy、样式和派生 CCT，U/V 为换算属性。软件偏好及导出文件名单独通过 JSON 配置保存。
+MainForm 是新版交互协调器，持有 `List<CieCurve>`、`List<CiePoint>`、`List<CieArrow>` 和 `DiagramStyle`；业务数据不经过数据库或文件持久化。曲线包含原始波长/强度、名称、标记样式和结果缓存；坐标点包含 xy、样式和派生 CCT，U/V 为换算属性。箭头保存参考数据对象与位置偏移，软件偏好及导出文件名单独通过 JSON 配置保存。
 
 `Core/AppSettings.cs` 定义有版本的偏好白名单：图型、各显示开关、字体与大小、两种图型的轴标题/间距、导出 DPI 与文件名。`Core/SettingsStore.cs` 读写 UTF-8 JSON；配置路径为 AppContext.BaseDirectory 下的 CIE1931xy.settings.json，取实际程序目录而非工作目录。读取后补默认值、核验版本与数值范围；文件缺失正常使用默认，损坏或不可读时反馈状态，不在初始化时重写原文件。字体不可用时回退本机默认字体。
 
@@ -49,7 +49,7 @@ MainForm 是新版交互协调器，持有 `List<CieCurve>`、`List<CiePoint>` �
 
 新版手工布局在 `BuildUi` 开始暂停布局，全部控件加入后才恢复布局，保证 96dpi 设计尺寸统一缩放；不能在控件尚未加入时触发首次 AutoScale，否则高 DPI 下文字与控件边界会不同步。分割条最小宽度及初始位置、表格初始列宽显式从逻辑单位转成设备像素；表头最小宽度按文字测量，表头和数据行高度自动适应内容。
 
-数据操作栏位于左侧表格上方，包含「导入光谱 / 输入数据」和「批量改名」两组；图形操作栏位于右侧预览上方，包含「颜色 / 描边」和「导出数据 / 导出图片」两组。`MakeToolbar` 统一两侧的按钮高度、内边距与背景；`AddToolbarGroup` 使用嵌套 FlowLayoutPanel，组内不换行、外层按整组换行。组内间距为 `MainForm.ButtonSpacing`（6 个逻辑像素），组间为其三倍，换行间距为 6；显示设置及对话框按钮仍统一使用 6 个逻辑像素。`UpdateTables` 同步无数据时的按钮禁用状态，图片导出保留空白底图能力。
+数据操作栏位于左侧表格上方，包含「导入光谱 / 输入数据」和「批量改名」两组；图形操作栏位于右侧预览上方，包含「颜色 / 描边」、「添加箭头 / 管理箭头」和「导出数据 / 导出图片」三组。`MakeToolbar` 统一两侧的按钮高度、内边距与背景；`AddToolbarGroup` 使用嵌套 FlowLayoutPanel，组内不换行、外层按整组换行。组内间距为 `MainForm.ButtonSpacing`（6 个逻辑像素），组间为其三倍，换行间距为 6；显示设置及对话框按钮仍统一使用 6 个逻辑像素。`UpdateTables` 同步无数据时的按钮禁用状态，图片导出保留空白底图能力。
 
 显示设置采用可伸缩的两列布局，标签和开关按文字调整尺寸；主设置面板按内容的 PreferredSize 和父容器空间测量高度，为数据页签预留空间。快捷键提示独立 Dock=Bottom，按宽度/字体/DPI 重测高度并分三行显示，不放进可滚动的设置项容器；小窗口只滚动设置项。坐标轴、字体和清空按钮共用按文字尺寸布局的 MakeBarButton，避免清空按钮的旧 202px 最小宽度迫使额外换行；测量用重入保护防止布局事件循环。统一输入数据、单项改名、批量改名对话框共用独立的 96dpi 初始化与自动布局按钮区；多行提示在宽度、字体或 DPI 变化后重新测量高度。经典窗口仍保持独立的 DpiUnaware 策略。
 
@@ -97,6 +97,18 @@ UI 图片导出前克隆 DiagramStyle 并关闭 HighlightSelection。Exporter �
 
 WinForms 的菜单 `ShortcutKeys` 不接受裸 `Space`，隐藏/显示菜单用 `ShortcutKeyDisplayString` 标注表格快捷键，避免打开右键菜单时抛异常。`Program.Main` 在无控制台的 WinExe 进程中设置输出代码页失败时，回退为直接使用 UTF-8 的标准输出 StreamWriter，确保实际单文件自检的重定向中文日志可读。
 
+## 箭头方向标注
+
+`Core/ArrowModel.cs` 中的 ArrowEndpoint 持有 CieCurve 或 CiePoint 引用，CieArrow 保存参考端点、类型、颜色、线宽、曲率、弯曲方向、描边和相对偏移；不通过名称或表格行号关联。箭头在点列旁边表达起点 → 终点的变化方向，参考点确定初始方向和长度；默认白色、2.5 线宽、黑色细描边，初始沿参考方向的垂线偏移约绘图区短边的 7%。
+
+`MainForm.Arrows.cs` 统一光谱计算点和独立坐标点候选项、管理窗口及删除清理。少于两个可用点时禁用添加，拒绝同一端点和重合坐标；改名保留关联，隐藏光谱时相关箭头暂时隐藏，恢复后重新显示。UpdateTables 根据对象成员关系清理已删除端点的箭头，ClearAll 同时清空箭头；箭头不写入偏好 JSON 或 CSV/TXT，经典入口不接入。
+
+`UI/ArrowEditorDialog.cs` 按独立 96dpi 基准创建编辑窗口，支持直线/弯曲、颜色、线宽 1–12、曲率 0–100%、左右弯、描边开关与颜色；使用点列与箭头分开的样式示意。应用返回新模型，取消不改原对象，编辑保留已有位置。NumericUpDown 设最小尺寸，避免 AutoSize 表格布局缩成零宽；使用提示固定在滚动区外，按宽度和字体测量高度，小窗口只滚动设置和示意预览。
+
+`MainForm.ArrowDragging.cs` 按 PictureBox.Zoom 把鼠标坐标转为当前图片像素，再将拖动位移保存为绘图区宽/高的 OffsetX / OffsetY；整条箭头平移，原点坐标不变，直线保持与参考方向平行。箭身与箭头三角形均可命中，数据标记的点击优先；鼠标捕获期间更新位置，按约 30ms 节流重绘，松开后完整重绘。根据几何边界限制常规箭头留在绘图区内；超出绘图区的部分最终由画布裁剪。
+
+`Core/Rendering/ArrowGeometry.cs` 共用曲线子段、终点切线、箭头三角形、边界和命中几何；`ArrowRenderer.cs` 先从原端点换算图型坐标，再整体平移。IPlotCanvas 的 DrawBezier / PushClip / PopClip 分别由 GDI DrawBezier + GraphicsState 和 SVG path C + clipPath 实现。箭头绘制在数据标记之前，选中高亮只用于预览；Exporter 新增可选箭头列表参数，旧调用仍可省略，预览与 PNG/TIFF/SVG 使用同一位置与形状。方向标注不代表经过中间测量点的真实轨迹。
+
 ## 导出与检查边界
 
 `MainForm.ExportImage` 在 PNG/TIFF/SVG 的保存调用成功返回后，统一弹出带完整保存位置的「导出成功」信息框，并保留原有状态栏记录。保存对话框取消时直接返回，异常分支显示错误后也立即返回，避免失败后继续显示成功；Exporter 和自检仍不包含交互提示。
@@ -111,7 +123,7 @@ WinForms 的菜单 `ShortcutKeys` 不接受裸 `Space`，隐藏/显示菜单用 
 
 导出字体缩放为 `clamp((width+height)/2000,1,2.4)`；预览同样经过 Exporter，不能仅凭旧注释断言最大化时字号完全固定。
 
-GoldenTests 通过 Compile Link 包含 CieData、CieMath、SpectralInput、VbText；不加载 Form1 或主工程，不能验证记录表累加、选择状态与像素。SelfTest 检查 12 个数值条件及十个输出文件的最小大小；两个 u'v' 背景参数组合都回退矢量，不代表有 u'v' 位图资源。
+GoldenTests 通过 Compile Link 包含 CieData、CieMath、SpectralInput、VbText；不加载 Form1 或主工程，不能验证记录表累加、选择状态与像素。SelfTest 保留 12 个数值条件及十个基础输出文件的最小大小，另由 ArrowSelfTest 检查 41 项箭头条件和四组 PNG/TIFF/SVG，共 22 个输出文件；覆盖位图实际绘制、绘图区边界、SVG 结构、TIFF 格式/尺寸/DPI、端点联动和平行偏移。两个 u'v' 背景参数组合仍回退矢量，不代表有 u'v' 位图资源；自检不包含完整界面自动化。
 
 ## 文档维护映射
 

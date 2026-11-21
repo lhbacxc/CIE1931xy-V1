@@ -128,6 +128,7 @@ namespace CIE1931xy.Core
                 failures++;
             }
 
+            failures += ArrowSelfTest.Run(outDir, log);
             log.WriteLine(failures == 0 ? "SELFTEST OK" : "SELFTEST FAILED: " + failures);
             return failures;
         }

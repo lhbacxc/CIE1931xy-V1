@@ -107,11 +107,11 @@ GoldenTests 控制台日志使用 UTF-8；`--report` 输出 UTF-8 Markdown，ora
 
 `-Target selftest` 构建后执行当前 DLL，默认写入 `./.codegraph/validation/selftest/`。可用 `-SelfTestDir` 指定其他目录，已存在的同名自检文件会被覆盖。子进程无窗口，脚本同时检查退出码和 SELFTEST OK，并保留 UTF-8 stdout/stderr 日志。
 
-自检包含 12 个数值检查，以及四组 PNG/SVG、CSV/TXT 的最小文件大小检查，共十个输出文件。自检图片为 900×900、PNG 144DPI，UI 导出为 1400×1400、默认 300DPI，二者参数不同。
+自检保留 12 个数值检查，以及四组 PNG/SVG、CSV/TXT 的最小文件大小检查，基础十个输出文件；ArrowSelfTest 增加 41 项箭头条件检查和 xy/u'v' × 直线/弯曲的四组 PNG/TIFF/SVG，共 22 个输出文件。基础自检图片为 900×900、PNG 144DPI，箭头 PNG/TIFF 为 900×900、300DPI；UI 导出为 1400×1400、默认 300DPI。
 
 四组命名为 xy-bitmap、xy-vector、uv-bitmap、uv-vector；u'v' 不支持位图，后两组实际都走矢量。xy-bitmap SVG 内嵌一个 PNG image，其他三份 SVG 为矢量色块并含 clipPath。
 
-自检不验证 TIFF、完整 UI 流程、选中联动、像素差异或多显示器 DPI。它依赖 Windows / System.Drawing；免开主窗口不等于可以在 Linux 运行。渲染改动后按受影响的格式补充视觉和尺寸/DPI检查。
+箭头自检包含 TIFF 格式/尺寸/DPI、SVG 箭头结构与颜色、实际位图变化及绘图区边界、端点隐藏/恢复/删除、命中、平行偏移与导出高亮排除；仍不验证完整 UI 流程或多显示器 DPI。它依赖 Windows / System.Drawing；免开主窗口不等于可以在 Linux 运行。渲染改动后按受影响的格式补充视觉和尺寸/DPI检查。
 
 Exporter 本身不会自动关闭 HighlightSelection；UI 导出入口会克隆样式并关闭，其他调用者须自行设置。
 
@@ -329,3 +329,12 @@ Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，SelfTest 通�
 
 - 对真实 dist 的自检子进程设置 COREHOST_TRACE / COREHOST_TRACEFILE 追踪，不改变系统环境。启动器读取 HKLM 的 x64 .NET InstallLocation，选中机器级 dotnet 根目录，加载其 host/fxr/8.0.31/hostfxr.dll，随后在同一根目录下选中 Microsoft.NETCore.App 和 Microsoft.WindowsDesktop.App 8.0.31；未使用用户目录 SDK 自带的 10.0.15。日志位于被忽略的 `./.codegraph/validation/runtime-search/host-trace.log`。
 - 当前无 DOTNET_ROOT 系列环境覆盖。按 [Microsoft 的 .NET 7+ 规则](https://learn.microsoft.com/en-us/dotnet/core/compatibility/deployment/7.0/multilevel-lookup)，exe 在环境指定目录、注册目录或默认目录中选定第一处 .NET 安装，之后只在该根目录中查找所需框架；与通过特定 dotnet.exe 启动 DLL 的目录选择区别开。README 同步部署说明，未改源码或重新发布。
+
+## 2026-11-21 点列旁箭头与整体拖动验收
+
+- 从既有 main 创建 `codex/arrows` 分支，实现推荐范围并按用户示例修订位置：参考起终点确定方向，箭头初始放在点列旁边，鼠标拖动整体平移，保持方向/形状，不修改数据坐标。支持默认白色、自定义颜色、线宽、直线/弯曲、曲率与左右弯、细描边、多条箭头管理及编辑/删除；原始 TODO 的渐变色设想尚未实现。
+- 当前源码 Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9；原有 12 个数值/解析检查和基础十个输出文件检查通过。ArrowSelfTest 新增 41 项检查、四组 PNG/TIFF/SVG，验证点列旁的平行方向、整体偏移、命中、位图实际绘制与绘图区边界、端点隐藏/恢复/删除、SVG 结构/颜色/纯矢量、TIFF 格式/尺寸/DPI、导出高亮排除，全部通过。
+- 临时实际窗口集成检查本机 175% 为 94 项通过，模拟 100%–200% 为 190 项通过，覆盖添加、编辑、取消、重复端点、两类数据源、多条箭头、直线/弯曲鼠标事件与捕获、编辑保留拖动位置、图型切换、管理删除、端点改名/隐藏/恢复/删除/清空，以及对话框按钮、数值字段、固定提示和管理窗口最小尺寸边界。此前主界面布局检查也覆盖本机 175% 与模拟 100%–200%、三种窗口尺寸及窄/宽侧栏，失败 0；未实测跨显示器拖动。
+- 截图发现 AutoSize 表格布局把独立 NumericUpDown 缩成零宽，设置 100×26 最小逻辑尺寸修复，并增加数值字段边界检查。样式示意中将点列与箭头分开；使用提示独立固定在滚动区外并按宽度/字体测量，默认窗口增高，小窗口保留设置区滚动。
+- 用已有 bundled sharp/librsvg 实际渲染示例和弯曲 SVG，检查 PNG/SVG 的箭头位置、方向、白色显示、曲线与箭头头部衔接；没有增加工程依赖。README 示例保存为 `./doc/screens/16-arrows-beside-points.png`，临时图、窗口截图、日志与检查程序在忽略的 `./.codegraph/validation/arrows/` 和 `arrows-harness/`。
+- 本地测试版单文件 exe 位于 `./artifacts/arrows/CIE1931xy.exe`，仍需 .NET 8 Desktop Runtime x64；实际测试 exe 自检通过，生成 22 个文件。测试产物不进入 Git，main 与公开 v2.0.0 Release 不由本轮自动合并或替换。README、架构说明、入门指南、AGENTS、箭头设计和 TODO 同步当前分支行为与验证范围。

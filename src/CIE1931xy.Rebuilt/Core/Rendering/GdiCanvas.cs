@@ -14,6 +14,7 @@ namespace CIE1931xy.Core.Rendering
         private readonly Dictionary<string, Pen> _pens = new Dictionary<string, Pen>();
         private readonly Dictionary<string, SolidBrush> _brushes = new Dictionary<string, SolidBrush>();
         private readonly double _scale;
+        private readonly Stack<GraphicsState> _clips = new Stack<GraphicsState>();
 
         public GdiCanvas(Graphics g, double pixelScale)
         {
@@ -69,6 +70,24 @@ namespace CIE1931xy.Core.Rendering
         public void DrawLine(Color color, double width, double x1, double y1, double x2, double y2)
         {
             _g.DrawLine(GetPen(color, width), P(x1), P(y1), P(x2), P(y2));
+        }
+
+        public void DrawBezier(Color color, double width, PointF start, PointF control1, PointF control2, PointF end)
+        {
+            _g.DrawBezier(GetPen(color, width), new PointF(P(start.X), P(start.Y)),
+                new PointF(P(control1.X), P(control1.Y)), new PointF(P(control2.X), P(control2.Y)),
+                new PointF(P(end.X), P(end.Y)));
+        }
+
+        public void PushClip(RectangleD rect)
+        {
+            _clips.Push(_g.Save());
+            _g.SetClip(new RectangleF(P(rect.Left), P(rect.Top), P(rect.Width), P(rect.Height)), CombineMode.Intersect);
+        }
+
+        public void PopClip()
+        {
+            if (_clips.Count > 0) _g.Restore(_clips.Pop());
         }
 
         public void DrawPolyline(Color color, double width, float[] xs, float[] ys)
@@ -146,6 +165,7 @@ namespace CIE1931xy.Core.Rendering
 
         public void Dispose()
         {
+            while (_clips.Count > 0) PopClip();
             foreach (Pen pen in _pens.Values) pen.Dispose();
             foreach (SolidBrush brush in _brushes.Values) brush.Dispose();
             _pens.Clear();

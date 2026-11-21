@@ -33,6 +33,8 @@ namespace CIE1931xy.Core.Rendering
 
         public double PixelScale { get { return _scale; } }
         public string ChineseFontFamily { get; set; }
+        private int _clipSequence;
+        private int _clipDepth;
 
         private static string F(double v)
         {
@@ -62,6 +64,34 @@ namespace CIE1931xy.Core.Rendering
                  .Append("\" x2=\"").Append(F(x2)).Append("\" y2=\"").Append(F(y2))
                  .Append("\" stroke=\"").Append(Col(color)).Append("\" stroke-width=\"").Append(F(width * _scale))
                  .Append("\" stroke-linecap=\"round\"").Append(Opacity(color)).Append("/>\n");
+        }
+
+        public void DrawBezier(Color color, double width, PointF start, PointF control1, PointF control2, PointF end)
+        {
+            _body.Append("<path d=\"M ").Append(F(start.X * _scale)).Append(' ').Append(F(start.Y * _scale))
+                .Append(" C ").Append(F(control1.X * _scale)).Append(' ').Append(F(control1.Y * _scale))
+                .Append(' ').Append(F(control2.X * _scale)).Append(' ').Append(F(control2.Y * _scale))
+                .Append(' ').Append(F(end.X * _scale)).Append(' ').Append(F(end.Y * _scale))
+                .Append("\" fill=\"none\" stroke=\"").Append(Col(color)).Append("\" stroke-width=\"")
+                .Append(F(width * _scale)).Append("\" stroke-linecap=\"round\" stroke-linejoin=\"round\"")
+                .Append(Opacity(color)).Append("/>\n");
+        }
+
+        public void PushClip(RectangleD rect)
+        {
+            string id = "annotation-clip-" + (++_clipSequence).ToString(CultureInfo.InvariantCulture);
+            _body.Append("<defs><clipPath id=\"").Append(id).Append("\"><rect x=\"").Append(F(rect.Left * _scale))
+                .Append("\" y=\"").Append(F(rect.Top * _scale)).Append("\" width=\"").Append(F(rect.Width * _scale))
+                .Append("\" height=\"").Append(F(rect.Height * _scale)).Append("\"/></clipPath></defs>\n")
+                .Append("<g clip-path=\"url(#").Append(id).Append(")\">\n");
+            _clipDepth++;
+        }
+
+        public void PopClip()
+        {
+            if (_clipDepth == 0) return;
+            _body.Append("</g>\n");
+            _clipDepth--;
         }
 
         public void DrawPolyline(Color color, double width, float[] xs, float[] ys)

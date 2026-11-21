@@ -36,6 +36,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - 经典链路 `Form1 → SpectralInput → CieMath → VbText` 保留 VB 语义、1nm/5nm 和四位小数取整；改动须检查 oracle。
 - 新版链路 `MainForm → SpectrumCsvParser/CoordinateParser → Colorimetry → Model → DiagramRenderer/Exporter` 默认逐点求和、未归一、未做经典四位取整；不要把两条链路混同。
 - 新版工作台的 xy/u'v' 统一使用矢量绘图，PNG/TIFF/SVG 仅为导出格式选项，不恢复位图背景选择或新版 Ctrl+B。渲染通过 `IPlotCanvas` 共用 GDI 与 SVG 输出；新增绘制能力须核对两种实现。新版 SVG 使用渐变扫描带与平滑轮廓裁剪、不内嵌 PNG；背景不能复用像素透明掩码，修复后须核对放大显示的接缝与边界缺口。底层位图兼容分支及经典底图保留。
+- 箭头为当前会话的方向标注：绑定参考数据对象，以绘图区相对偏移放在点列旁边并支持整体拖动，不改变点坐标或计算。MainForm.Arrows.cs / MainForm.ArrowDragging.cs 管理交互，ArrowGeometry / ArrowRenderer 共用 GDI 与 SVG 几何；删除/隐藏端点、图型切换与图片导出须同步，选中高亮不导出。详见架构说明的箭头章节。
 - 新版图中文字默认数字/字母 Times New Roman、中文 SimSun（宋体）；混排分段、测量与基线共用 `./src/CIE1931xy.Rebuilt/Core/Rendering/PlotTextLayout.cs`。字体/大小交互位于 `./src/CIE1931xy.Rebuilt/MainForm.FontSettings.cs`；改字体绘制须同时核对 GDI 与 SVG、旋转标题及文字边界，释放临时 Font 与 GdiCanvas 资源。经典位图文字不受该设置影响。
 - 新版偏好保存为实际 exe 同目录的 `./CIE1931xy.settings.json`，以 AppContext.BaseDirectory 定位；恢复后才启用保存，不能在初始化时覆盖用户配置。存储白名单、UTF-8、数值校验及同目录完整写入后替换由 Core/AppSettings.cs、Core/SettingsStore.cs 与 MainForm.Settings.cs 维护；不保存业务数据或渲染缓存。经典入口及自检不读写该配置。
 - 位图固定 684×732，轴矩形为 (59,12) 起、600×675；对应 xy 范围 0–0.8 / 0–0.9。坐标映射不可使用数据包络替代该范围。
@@ -51,7 +52,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - `-Target run` 构建后启动对应 Configuration 下的主程序，不读取 dist；VS Code 配置也调试 Debug apphost.exe。
 - publish 先构建、回归、自检，再核验并更新 `./dist/` 的发布产物，不清空目录，保留配置与其他用户文件。工程下的 bin/obj 是产物，dist 中同时可能包含用户配置；不能把整个目录当作可删除产物。
 - GoldenTests 只校验经典解析/计算字段及格式化文本，不校验窗体、表格状态或像素；新版解析/渲染用 `--selftest` 补充。
-- 自检含 12 个数值检查及 PNG/SVG/CSV/TXT 文件检查，没有 TIFF 或界面自动化检查；u'v' 的 bitmap 组合仍回退矢量背景。
+- 自检保留 12 个数值检查及原有 PNG/SVG/CSV/TXT 文件检查，ArrowSelfTest 增加 41 项箭头条件检查及四组 PNG/TIFF/SVG；仍没有完整界面自动化检查，u'v' 的 bitmap 组合仍回退矢量背景。
 - 解决方案 `./CIE1931xy.sln` 包含主程序和 GoldenTests；编辑规范见 `./.editorconfig`，编辑器配置见 `./.vscode/`。没有独立测试框架、覆盖率或 CI，不能把自定义回归命令写成 dotnet test。
 - 验证现有二进制必须标明，不能作为源码构建成功的证据；源码验证结果记录在开发指南。
 

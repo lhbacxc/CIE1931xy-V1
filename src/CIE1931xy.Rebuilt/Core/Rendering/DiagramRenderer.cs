@@ -115,12 +115,14 @@ namespace CIE1931xy.Core.Rendering
         private readonly DiagramStyle _style;
         private readonly IList<CieCurve> _curves;
         private readonly IList<CiePoint> _points;
+        private readonly IList<CieArrow> _arrows;
 
-        public DiagramRenderer(DiagramStyle style, IList<CieCurve> curves, IList<CiePoint> points)
+        public DiagramRenderer(DiagramStyle style, IList<CieCurve> curves, IList<CiePoint> points, IList<CieArrow> arrows = null)
         {
             _style = style;
             _curves = curves;
             _points = points;
+            _arrows = arrows;
         }
 
         public void Render(IPlotCanvas canvas, int width, int height)
@@ -232,6 +234,7 @@ namespace CIE1931xy.Core.Rendering
             }
 
             // 数据
+            ArrowRenderer.Draw(canvas, s, tr, _arrows, _curves, _points);
             DrawCurves(canvas, tr);
             DrawPoints(canvas, tr);
 

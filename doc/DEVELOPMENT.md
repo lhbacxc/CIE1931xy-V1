@@ -343,6 +343,8 @@ Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，SelfTest 通�
 
 - 按用户后续授权同步 codex/arrows，再以保留分支历史的合并提交并入 main；工程、主窗口、关于和 TXT 报告版本统一为 2.1.0。源码运行目标仍为 .NET 8，没有新增工程依赖或修改计算口径。
 - README 末尾改为「源码来源与致谢」，正式说明源码由 [chenhunquan](https://github.com/chenhunquan) 提供、本仓库在此基础上优化和扩展，同时保留历史原作者 nicklxg 的署名与记录。用户确认仅作来源声明，不调整自动生成的 GitHub Contributors 列表；不新增维护者权限或改写提交作者。
-- 合并后的 Release 构建为 0 警告、0 错误，两套经典 oracle 各 9/9；基础数值/解析及 41 项箭头自检通过。轻量版与压缩自包含版均使用标准发布参数，两个实际 exe 的 FileVersion / ProductVersion 为 2.1.0.0 / 2.1.0。
+- 合并后的 Release 构建为 0 警告、0 错误，两套经典 oracle 各 9/9；基础数值/解析及 41 项箭头自检通过。轻量版与压缩自包含版均使用标准发布参数，两个实际 exe 的 FileVersion 为 2.1.0.0，ProductVersion 以 2.1.0 为基准并附构建时的 Git 修订后缀。
 - 两个实际 exe 自检均通过，各输出 22 个文件；隔离系统 .NET 路径后，轻量版提示缺少运行时，便携版自检及 MainForm 启动输入空闲检查通过。没有改动系统运行时或环境变量。
 - 轻量 exe 为 1,091,664 字节，便携 ZIP 为 66,994,657 字节，ZIP 仅含 exe、中文使用说明及 .NET 许可/第三方声明；解压 exe 的 SHA256 与原件一致。产物位于 `./artifacts/releases/v2.1.0/`，临时验证位于 `./.codegraph/validation/release-v2.1.0/`；发布说明见 [v2.1.0](./RELEASE_v2.1.0.md)。
+- [GitHub v2.1.0 Release](https://github.com/lhbacxc/CIE1931xy-V1/releases/tag/v2.1.0) 已正式公开发布，设为 latest、非预发布，两个软件包和 SHA256SUMS.txt 已上传；上传后下载的 SHA256 与本地原件及校验文件一致。Git tag 对应发布提交 b16145b，codex/arrows 已确认是 main 的祖先。
+- 本地 `./dist/CIE1931xy.exe` 同步为 2.1.0.0，SHA256 与轻量版原件一致；旧 exe 备份于本轮忽略的验证目录，原用户配置保留。

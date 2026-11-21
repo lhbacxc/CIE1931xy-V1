@@ -37,7 +37,7 @@ $runtimeExe = Join-Path $env:ProgramFiles 'dotnet\dotnet.exe'
 | `./.vscode/launch.json` | 新版/经典 Debug 调试入口，启动 apphost.exe |
 | `./.vscode/extensions.json` | C#、C# Dev Kit、PowerShell 扩展推荐，不自动安装编辑器 |
 
-本地 Git 仓库已初始化为 main，尚未配置远端。没有独立测试框架、覆盖率或 CI 配置。本项目的自定义回归不是 dotnet test，不生成伪 Python requirements.txt；后续 Python 辅助程序遵守 AGENTS.md 的环境确认规则。
+本地 Git 仓库使用 main，origin 指向公开仓库 [lhbacxc/CIE1931xy-V1](https://github.com/lhbacxc/CIE1931xy-V1)。没有独立测试框架、覆盖率或 CI 配置。本项目的自定义回归不是 dotnet test，不生成伪 Python requirements.txt；后续 Python 辅助程序遵守 AGENTS.md 的环境确认规则。
 
 ## 日常命令
 
@@ -132,11 +132,50 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 
 ## Git 与忽略范围
 
-2026-11-19 按用户要求初始化本地 main 仓库，建立源码、资源、测试与文档的初始记录；未绑定远端。本地提交用于保留开发历史，提交说明默认中文。
+2026-11-19 初始化本地 main 仓库，建立源码、资源、测试与文档的初始记录；2026-11-21 按用户授权创建 GitHub 公开仓库 [lhbacxc/CIE1931xy-V1](https://github.com/lhbacxc/CIE1931xy-V1) 并绑定 origin。保留已有提交历史，提交说明默认中文。
 
 `./.gitignore` 排除工程下 bin/obj、根目录 dist/artifacts、TestResults、CodeGraph 数据与验证目录、日志/临时备份、个人 IDE 状态、程序自动生成的 CIE1931xy.settings.json 及其临时文件、.env 配置；.env.example/sample/template 可以保留。共享 VS Code 配置、资源图片、doc/screens 历史截图和 tests/oracle JSON/文本保留在版本管理中，不按图片/CSV/TXT/SVG 扩展名整体忽略。
 
 `./.gitattributes` 自动识别文本并规范仓库换行；源码、JSON 和文档检出为 LF，PowerShell/解决方案检出为 CRLF，位图/图标按二进制处理。tests/oracle 的 TXT 输入保留原始字节和 CRLF/LF/末尾换行，避免改变经典解析回归用例。不改变 UTF-8 内容或 BOM。
+
+本地实验数据 `./测试光谱/` 不随公开源码上传；发布包只包含本轮明确选择的程序、使用说明及 .NET 许可文件，不从 dist 整目录打包，避免带入个人配置或用户文件。
+
+## GitHub Release 打包
+
+公开 Release 提供框架依赖单 exe 与自包含便携 ZIP，校验值放在 SHA256SUMS.txt。先执行 `./build.ps1` 完成源码回归，再分别发布到被忽略的 `./artifacts/releases/<版本>/` 子目录，避免覆盖日常使用的 dist；命令中的版本号须与工程版本及 Git tag 一致。
+
+以下是 v2.0.0 已验证的 PowerShell 命令：
+
+```powershell
+$ErrorActionPreference = 'Stop'
+$OutputEncoding = [Console]::InputEncoding = [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding
+$PSDefaultParameterValues['*:Encoding'] = 'UTF8'
+
+$releaseSdk = Join-Path $env:LOCALAPPDATA 'Microsoft/dotnet/dotnet.exe'
+$releaseProject = './src/CIE1931xy.Rebuilt/CIE1931xy.Rebuilt.csproj'
+$releaseArguments = @(
+    'publish', $releaseProject, '-c', 'Release', '-r', 'win-x64',
+    '-p:PublishSingleFile=true', '-p:IncludeNativeLibrariesForSelfExtract=true',
+    '-p:DebugType=None', '-p:DebugSymbols=false', '--nologo'
+)
+& $releaseSdk @releaseArguments '-p:SelfContained=false' '-o' './artifacts/releases/v2.0.0/framework-dependent'
+if ($LASTEXITCODE -ne 0) { throw '轻量版发布失败' }
+& $releaseSdk @releaseArguments '-p:SelfContained=true' '-p:EnableCompressionInSingleFile=true' '-o' './artifacts/releases/v2.0.0/self-contained'
+if ($LASTEXITCODE -ne 0) { throw '便携版发布失败' }
+```
+
+自包含 exe 启用内部压缩，首次启动会解包 native 组件；没有启用裁剪，避免 WinForms 动态加载兼容问题。便携 ZIP 内保留所用 .NET runtime 包的 LICENSE.TXT / THIRD-PARTY-NOTICES.TXT，使用带 DOTNET 后缀的文件名，区分原程序版权与运行时许可。
+
+发布前验收实际 exe 的 `--selftest`。确认便携版无需额外运行时应仅给测试子进程设置空的 DOTNET_ROOT / DOTNET_ROOT_X64，并记录 COREHOST_TRACE，不能卸载或修改系统环境；本轮还启动了实际新版窗口，确认进入输入空闲。检查 ZIP 清单、解压后 exe 的 SHA256、上传后下载文件校验值；tag 指向对应源码提交。发布说明见 [v2.0.0](./RELEASE_v2.0.0.md)。
+
+### 2026-11-21 首次公开发布验收
+
+- 保留既有本地 main 历史，新建公开 origin；本轮发布不实现仍在 TODO 中的箭头功能，不修改计算口径。
+- 当前源码 Release 主程序及测试工程构建均为 0 警告、0 错误，两套 oracle 各 9/9，新版 12 个数值/解析检查和十个输出文件检查通过。
+- 两种发布均使用标准 NuGet 还原与单文件发布参数，成功执行单文件分析器；无需沿用历史离线源或禁用分析器的绕过参数。两种实际 exe 自检通过。
+- 仅对验证子进程隔离系统 .NET 根目录：轻量版返回缺少运行时错误，便携版自检及实际 MainForm 输入空闲检查通过。host trace 确认便携版采用内置 .NETCore / WindowsDesktop 8.0.34；未卸载系统运行时或修改系统环境变量。
+- 轻量 exe 为 1,059,920 字节，与当前 dist 的 SHA256 一致；便携压缩 exe 为 72,521,399 字节，ZIP 为 66,980,720 字节。ZIP 仅含 exe、中文使用说明及两份 .NET 许可/声明，解压后 exe 的 SHA256 与发布原件一致，没有个人设置文件。
+- 临时验收日志、trace 和 ZIP 解压核验位于被忽略的 `./.codegraph/validation/github-release/`；软件下载文件位于 `./artifacts/releases/v2.0.0/`，不纳入源码 Git。README、AGENTS、入门指南、开发指南和版本发布说明同步公开仓库与两种下载方式。
 
 正常 git push 会同步所推送分支及其祖先提交，包含首次推送前的多次本地记录；未提交修改、忽略文件及未推送的其他分支不会自动同步。若需要合并历史为一次提交，应在推送前单独规划，不能擅自重写已有历史。
 

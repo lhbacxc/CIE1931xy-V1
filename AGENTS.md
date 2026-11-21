@@ -67,7 +67,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - 结束前只检查本次涉及的架构、目录职责、环境/依赖、命令、约定与可复用排障事实；有长期变化时自主增量更新对应文档。
 - 详细事实放到 `./doc/ARCHITECTURE.md` 或 `./doc/DEVELOPMENT.md`，用户行为同步 README；本文件只保留执行约束和入口。
 - 保留用户规则、人工内容和有效约定；不写入猜测、敏感数据、临时日志或未经验证的命令。无长期变化不写文档。
-- 本地 Git 仓库已初始化，当前开发起点为 main；提交说明默认中文。远端尚未配置，绑定/推送需用户明确授权，不推断既有分支或合并约定。
+- 本地 Git 仓库使用 main；提交说明默认中文。origin 为公开仓库 [lhbacxc/CIE1931xy-V1](https://github.com/lhbacxc/CIE1931xy-V1)，发布流程见开发指南；后续推送与 Release 发布仍遵循用户授权，不推断分支或合并约定。
 - 遵循 `./.gitignore` 和 `./.gitattributes`：构建/发布、CodeGraph、日志和个人编辑器状态不纳入 Git；源码、资源、doc/screens、tests/oracle 及共享 VS Code 配置应保留。
 - tests/oracle 的 TXT 回归输入含换行边界用例，Git 禁止对其转换换行；不要批量格式化这些输入或重建 oracle 答案。
 - `./TODO.md` 保留用户原始待办；不得未经实现或验证就勾为完成，历史计划中被后续修订覆盖的条目也不能直接恢复。

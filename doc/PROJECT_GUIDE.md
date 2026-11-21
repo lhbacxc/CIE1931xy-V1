@@ -82,7 +82,7 @@ codegraph status .
 .\build.ps1 -Target test
 ```
 
-默认 build.ps1 包含主程序构建、两套 oracle 和 SelfTest；完整命令见开发指南。`./CIE1931xy.sln` 包含两个工程，`./.vscode/` 提供 Debug 构建与新版/经典调试配置，`./.editorconfig` 统一 UTF-8 和缩进。源码修改后同步 CodeGraph。本地 Git 已初始化为 main，提交说明默认中文，尚未配置远端；没有覆盖率或 CI 入口。版本管理与忽略范围见开发指南。
+默认 build.ps1 包含主程序构建、两套 oracle 和 SelfTest；完整命令见开发指南。`./CIE1931xy.sln` 包含两个工程，`./.vscode/` 提供 Debug 构建与新版/经典调试配置，`./.editorconfig` 统一 UTF-8 和缩进。源码修改后同步 CodeGraph。本地 main 对应公开仓库 [lhbacxc/CIE1931xy-V1](https://github.com/lhbacxc/CIE1931xy-V1)，提交说明默认中文；没有覆盖率或 CI 入口。Release 提供轻量版与自带运行时的便携版，发布命令、版本管理与忽略范围见开发指南。
 
 2026-11-19 已补齐用户目录下的 .NET 10.0.404 SDK；主程序目标仍为 .NET 8。当前验证结果与此前的二进制检查分别记录在开发指南。
 

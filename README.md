@@ -6,6 +6,18 @@ CIE1931xy 是 Windows 桌面色度分析工具，使用 C# / .NET 8 / WinForms �
 
 新版工作台更改设置后，会在 **程序所在目录** 自动生成 `./CIE1931xy.settings.json`，下次启动恢复上次设置。配置只保存软件偏好，导入的光谱和坐标数据仍需重新导入。
 
+## 下载软件
+
+公开源码仓库：[lhbacxc/CIE1931xy-V1](https://github.com/lhbacxc/CIE1931xy-V1)。软件在 [GitHub Releases](https://github.com/lhbacxc/CIE1931xy-V1/releases) 提供 Windows x64 下载：
+
+| 下载文件 | 适用情况 |
+| --- | --- |
+| `CIE1931xy-v2.0.0-win-x64.exe` | 轻量单文件，需要已安装 .NET 8 Desktop Runtime x64 |
+| `CIE1931xy-v2.0.0-win-x64-portable.zip` | 推荐普通用户下载；包含运行时，解压后打开 `./CIE1931xy.exe` 即可，无需另装 .NET |
+| `SHA256SUMS.txt` | 用于核验上述下载文件的完整性 |
+
+便携版 exe 启用了单文件内部压缩，首次运行会自动解包组件到用户临时目录。请解压到可写目录使用，以便保存程序旁的设置文件；更新时保留 `./CIE1931xy.settings.json`，替换 exe 即可。轻量版缺少运行时时，请从下方微软下载页安装 Desktop Runtime。
+
 ## 文档入口
 
 - 使用软件：本文件。

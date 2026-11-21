@@ -138,7 +138,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 
 `./.gitattributes` 自动识别文本并规范仓库换行；源码、JSON 和文档检出为 LF，PowerShell/解决方案检出为 CRLF，位图/图标按二进制处理。tests/oracle 的 TXT 输入保留原始字节和 CRLF/LF/末尾换行，避免改变经典解析回归用例。不改变 UTF-8 内容或 BOM。
 
-本地实验数据 `./测试光谱/` 不随公开源码上传；发布包只包含本轮明确选择的程序、使用说明及 .NET 许可文件，不从 dist 整目录打包，避免带入个人配置或用户文件。
+本地实验数据 `./测试光谱/` 与 `./test-spectrum/` 不随公开源码上传；发布包只包含本轮明确选择的程序、使用说明及 .NET 许可文件，不从 dist 整目录打包，避免带入个人配置或用户文件。
 
 ## GitHub Release 打包
 

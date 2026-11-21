@@ -176,6 +176,8 @@ if ($LASTEXITCODE -ne 0) { throw '便携版发布失败' }
 - 仅对验证子进程隔离系统 .NET 根目录：轻量版返回缺少运行时错误，便携版自检及实际 MainForm 输入空闲检查通过。host trace 确认便携版采用内置 .NETCore / WindowsDesktop 8.0.34；未卸载系统运行时或修改系统环境变量。
 - 轻量 exe 为 1,059,920 字节，与当前 dist 的 SHA256 一致；便携压缩 exe 为 72,521,399 字节，ZIP 为 66,980,720 字节。ZIP 仅含 exe、中文使用说明及两份 .NET 许可/声明，解压后 exe 的 SHA256 与发布原件一致，没有个人设置文件。
 - 临时验收日志、trace 和 ZIP 解压核验位于被忽略的 `./.codegraph/validation/github-release/`；软件下载文件位于 `./artifacts/releases/v2.0.0/`，不纳入源码 Git。README、AGENTS、入门指南、开发指南和版本发布说明同步公开仓库与两种下载方式。
+- GitHub [v2.0.0 Release](https://github.com/lhbacxc/CIE1931xy-V1/releases/tag/v2.0.0) 已正式公开发布，标记为 latest、非预发布；Git tag 指向发布提交 01ea497。源码 main 与 tag 均已推送。
+- 上传后从 GitHub 下载两个程序包，SHA256 均与本地原件和 SHA256SUMS.txt 一致。本地 dist 已更新为此次轻量版并核对 SHA256，旧 exe 备份于本轮忽略的验证目录，原个人配置保留。
 
 正常 git push 会同步所推送分支及其祖先提交，包含首次推送前的多次本地记录；未提交修改、忽略文件及未推送的其他分支不会自动同步。若需要合并历史为一次提交，应在推送前单独规划，不能擅自重写已有历史。
 

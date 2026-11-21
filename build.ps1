@@ -123,22 +123,22 @@ function Invoke-SelfTest([string]$ApplicationDll = (Join-Path $mainOutputDir 'CI
 }
 
 function Invoke-Publish {
-    # 仅允许删除项目根目录下的真实 dist 目录，拒绝符号链接或联接点。
+    # 验证项目根目录下的真实 dist 目录，拒绝符号链接或联接点。
     $resolvedRoot = (Resolve-Path -LiteralPath $projectRoot).ProviderPath
     $expectedDist = [IO.Path]::GetFullPath((Join-Path $resolvedRoot 'dist'))
     $resolvedDist = [IO.Path]::GetFullPath($distPath)
     if ($resolvedDist -ne $expectedDist -or (Split-Path -Parent $resolvedDist) -ne $resolvedRoot) {
-        throw '发布清理目标不在项目 dist 目录中，已停止。'
+        throw '发布目标不在项目 dist 目录中，已停止。'
     }
     if (Test-Path -LiteralPath $resolvedDist) {
         $distItem = Get-Item -LiteralPath $resolvedDist -Force
         if (-not $distItem.PSIsContainer -or ($distItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
-            throw 'dist 不是普通目录，已停止清理。'
+            throw 'dist 不是普通目录，已停止发布。'
         }
         if ((Resolve-Path -LiteralPath $resolvedDist).ProviderPath -ne $expectedDist) {
-            throw 'dist 的实际路径不符合发布范围，已停止清理。'
+            throw 'dist 的实际路径不符合发布范围，已停止发布。'
         }
-        Remove-Item -LiteralPath $resolvedDist -Recurse -Force
+        # 保留配置和用户文件；dotnet publish 只更新自身生成的发布产物。
     }
     Write-Host "==> 发布 ($Runtime, SelfContained=$SelfContained)" -ForegroundColor Cyan
     $publishArguments = @(

@@ -8,12 +8,11 @@ using System.Globalization;
 namespace CIE1931xy.Core.Rendering
 {
     /// <summary>GDI+ 画布实现（屏幕绘制 + 位图导出共用）。</summary>
-    internal sealed class GdiCanvas : IPlotCanvas
+    internal sealed class GdiCanvas : IPlotCanvas, IDisposable
     {
         private readonly Graphics _g;
         private readonly Dictionary<string, Pen> _pens = new Dictionary<string, Pen>();
         private readonly Dictionary<string, SolidBrush> _brushes = new Dictionary<string, SolidBrush>();
-        private readonly Dictionary<string, Font> _fonts = new Dictionary<string, Font>();
         private readonly double _scale;
 
         public GdiCanvas(Graphics g, double pixelScale)
@@ -30,6 +29,7 @@ namespace CIE1931xy.Core.Rendering
         }
 
         public double PixelScale { get { return _scale; } }
+        public string ChineseFontFamily { get; set; }
 
         private Pen GetPen(Color color, double width)
         {
@@ -57,26 +57,6 @@ namespace CIE1931xy.Core.Rendering
                 _brushes[key] = brush;
             }
             return brush;
-        }
-
-        private Font GetFont(string family, double sizePt, bool bold)
-        {
-            string key = family + "|" + Math.Round(sizePt * _scale, 2) + "|" + bold;
-            Font font;
-            if (!_fonts.TryGetValue(key, out font))
-            {
-                float px = (float)(sizePt * _scale);
-                try
-                {
-                    font = new Font(family, px, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Pixel);
-                }
-                catch (ArgumentException)
-                {
-                    font = new Font("Microsoft Sans Serif", px, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Pixel);
-                }
-                _fonts[key] = font;
-            }
-            return font;
         }
 
         // 所有坐标都乘以 _scale：导出高 DPI 图时用同一套逻辑坐标绘图，
@@ -139,36 +119,37 @@ namespace CIE1931xy.Core.Rendering
                              double x, double y, TextAlignH alignH, TextAlignV alignV, double rotationDeg)
         {
             if (string.IsNullOrEmpty(text)) return;
-            Font font = GetFont(fontName, fontSizePt, bold);
-            StringFormat fmt = new StringFormat(StringFormat.GenericTypographic);
-            fmt.Alignment = alignH == TextAlignH.Left ? StringAlignment.Near
-                          : alignH == TextAlignH.Right ? StringAlignment.Far : StringAlignment.Center;
-            fmt.LineAlignment = alignV == TextAlignV.Top ? StringAlignment.Near
-                              : alignV == TextAlignV.Bottom ? StringAlignment.Far : StringAlignment.Center;
-            fmt.FormatFlags |= StringFormatFlags.NoWrap;
-
-            GraphicsState state = _g.Save();
-            if (Math.Abs(rotationDeg) > 1e-6)
+            using (PlotTextLayout layout = PlotTextLayout.Create(_g, text, fontName, ChineseFontFamily, fontSizePt * _scale, bold))
+            using (StringFormat format = PlotTextLayout.CreateFormat())
             {
-                _g.TranslateTransform(P(x), P(y));
-                _g.RotateTransform((float)rotationDeg);
-                _g.DrawString(text, font, GetBrush(color), 0f, 0f, fmt);
+                GraphicsState state = _g.Save();
+                try
+                {
+                    _g.TranslateTransform(P(x), P(y));
+                    if (Math.Abs(rotationDeg) > 1e-6) _g.RotateTransform((float)rotationDeg);
+                    double left = layout.LeftOffset(alignH);
+                    double baseline = layout.BaselineOffset(alignV);
+                    foreach (PlotTextLayout.Run run in layout.Runs)
+                        _g.DrawString(run.Text, run.Font, GetBrush(color),
+                            (float)(left + run.Left), (float)(baseline - run.Ascent), format);
+                }
+                finally { _g.Restore(state); }
             }
-            else
-            {
-                _g.DrawString(text, font, GetBrush(color), P(x), P(y), fmt);
-            }
-            _g.Restore(state);
         }
 
         public SizeD MeasureText(string text, string fontName, double fontSizePt, bool bold)
         {
             if (string.IsNullOrEmpty(text)) return new SizeD(0, 0);
-            Font font = GetFont(fontName, fontSizePt, bold);
-            StringFormat fmt = new StringFormat(StringFormat.GenericTypographic);
-            fmt.FormatFlags |= StringFormatFlags.NoWrap;
-            SizeF s = _g.MeasureString(text, font, PointF.Empty, fmt);
-            return new SizeD(s.Width, s.Height);
+            using (PlotTextLayout layout = PlotTextLayout.Create(_g, text, fontName, ChineseFontFamily, fontSizePt * _scale, bold))
+                return new SizeD(layout.Width, layout.Height);
+        }
+
+        public void Dispose()
+        {
+            foreach (Pen pen in _pens.Values) pen.Dispose();
+            foreach (SolidBrush brush in _brushes.Values) brush.Dispose();
+            _pens.Clear();
+            _brushes.Clear();
         }
 
         public void DrawImage(Bitmap bitmap, double x, double y, double w, double h)

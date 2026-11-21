@@ -27,7 +27,13 @@ internal static class Program
     {
         // 无窗口自检也统一输出 UTF-8；没有控制台句柄时继续正常启动界面。
         try { Console.OutputEncoding = new System.Text.UTF8Encoding(false); }
-        catch (System.IO.IOException) { }
+        catch (System.IO.IOException)
+        {
+            // WinExe 在无控制台、仅重定向标准输出时设置代码页可能失败。
+            // 直接指定输出流编码，避免发布版自检日志回退到系统代码页。
+            Console.SetOut(new System.IO.StreamWriter(Console.OpenStandardOutput(),
+                new System.Text.UTF8Encoding(false)) { AutoFlush = true });
+        }
 
         // DPI 感知模式必须在创建任何窗口之前决定，所以先解析参数。
         bool? variant = null;

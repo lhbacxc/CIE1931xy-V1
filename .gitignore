@@ -6,8 +6,15 @@ obj/
 TestResults/
 *.binlog
 
+# 本地实验光谱，保留在本机，不随公开源码仓库上传
+/测试光谱/
+
 # 本机代码索引与临时验证产物
 /.codegraph/
+
+# 程序旁自动生成的个人设置，不作为共享项目配置提交
+CIE1931xy.settings.json
+CIE1931xy.settings.json.tmp-*
 
 # Visual Studio / JetBrains 用户状态
 .vs/

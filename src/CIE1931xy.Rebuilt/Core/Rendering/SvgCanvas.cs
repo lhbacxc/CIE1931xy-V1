@@ -32,6 +32,7 @@ namespace CIE1931xy.Core.Rendering
         }
 
         public double PixelScale { get { return _scale; } }
+        public string ChineseFontFamily { get; set; }
 
         private static string F(double v)
         {
@@ -219,36 +220,50 @@ namespace CIE1931xy.Core.Rendering
         {
             if (string.IsNullOrEmpty(text)) return;
             double px = fontSizePt * _scale;
-            string anchor = alignH == TextAlignH.Left ? "start" : alignH == TextAlignH.Right ? "end" : "middle";
-            string baseline = alignV == TextAlignV.Top ? "hanging" : alignV == TextAlignV.Bottom ? "alphabetic" : "middle";
-            _body.Append("<text x=\"").Append(F(x)).Append("\" y=\"").Append(F(y))
-                 .Append("\" font-family=\"").Append(Escape(fontName))
-                 .Append(", Microsoft YaHei, Arial, sans-serif\" font-size=\"").Append(F(px))
-                 .Append("\" fill=\"").Append(Col(color)).Append("\" text-anchor=\"").Append(anchor)
-                 .Append("\" dominant-baseline=\"").Append(baseline).Append("\"");
-            if (bold) _body.Append(" font-weight=\"bold\"");
-            if (Math.Abs(rotationDeg) > 1e-6)
-                _body.Append(" transform=\"rotate(").Append(F(rotationDeg)).Append(' ').Append(F(x)).Append(' ').Append(F(y)).Append(")\"");
-            _body.Append('>').Append(Escape(text)).Append("</text>\n");
+            using (PlotTextLayout layout = PlotTextLayout.Create(MeasureGraphics(), text, fontName, ChineseFontFamily, px, bold))
+            {
+                double left = x + layout.LeftOffset(alignH);
+                double baseline = y + layout.BaselineOffset(alignV);
+                _body.Append("<text x=\"").Append(F(left)).Append("\" y=\"").Append(F(baseline))
+                     .Append("\" font-family=\"").Append(FontStack(fontName)).Append("\" font-size=\"").Append(F(px))
+                     .Append("\" fill=\"").Append(Col(color)).Append("\" text-anchor=\"start\" dominant-baseline=\"alphabetic\" xml:space=\"preserve\"");
+                if (bold) _body.Append(" font-weight=\"bold\"");
+                if (Math.Abs(rotationDeg) > 1e-6)
+                    _body.Append(" transform=\"rotate(").Append(F(rotationDeg)).Append(' ').Append(F(x)).Append(' ').Append(F(y)).Append(")\"");
+                _body.Append('>');
+                if (layout.Runs.Count == 1 && layout.Runs[0].Family == fontName)
+                    _body.Append(Escape(text));
+                else
+                    foreach (PlotTextLayout.Run run in layout.Runs)
+                        _body.Append("<tspan x=\"").Append(F(left + run.Left)).Append("\" font-family=\"")
+                            .Append(FontStack(run.Family)).Append("\">").Append(Escape(run.Text)).Append("</tspan>");
+                _body.Append("</text>\n");
+            }
+        }
+
+        private static string FontStack(string fontName)
+        {
+            if (string.IsNullOrWhiteSpace(fontName)) fontName = "Times New Roman";
+            return Escape("\"" + fontName.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\", serif");
+        }
+
+        private static Graphics MeasureGraphics()
+        {
+            if (s_measure == null)
+            {
+                s_measureBmp = new Bitmap(4, 4);
+                s_measureBmp.SetResolution(96, 96);
+                s_measure = Graphics.FromImage(s_measureBmp);
+                s_measure.PageUnit = GraphicsUnit.Pixel;
+                s_measure.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            }
+            return s_measure;
         }
 
         public SizeD MeasureText(string text, string fontName, double fontSizePt, bool bold)
         {
-            if (string.IsNullOrEmpty(text)) return new SizeD(0, 0);
-            if (s_measure == null)
-            {
-                s_measureBmp = new Bitmap(4, 4);
-                s_measure = Graphics.FromImage(s_measureBmp);
-                s_measure.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
-            }
-            float px = (float)(fontSizePt * _scale);
-            using (Font font = new Font(fontName, px, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Pixel))
-            using (StringFormat fmt = new StringFormat(StringFormat.GenericTypographic))
-            {
-                fmt.FormatFlags |= StringFormatFlags.NoWrap;
-                SizeF s = s_measure.MeasureString(text, font, PointF.Empty, fmt);
-                return new SizeD(s.Width, s.Height);
-            }
+            using (PlotTextLayout layout = PlotTextLayout.Create(MeasureGraphics(), text, fontName, ChineseFontFamily, fontSizePt * _scale, bold))
+                return new SizeD(layout.Width, layout.Height);
         }
 
         public void DrawImage(Bitmap bitmap, double x, double y, double w, double h)

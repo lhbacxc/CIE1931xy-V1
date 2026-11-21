@@ -48,6 +48,7 @@ namespace CIE1931xy.Core
         public Color OutlineColor = Color.Black;
         public MarkerShape Shape = MarkerShape.Circle;
         public bool ShowLabel;
+        public bool Visible = true;           // 隐藏仅影响绘图，保留光谱与计算结果
         public bool Selected;                 // 表格里选中时高亮（导出不计）          // 图上是否显示名称标签（默认关）
         public bool Valid = true;       // 计算是否成功
         public string Message = "";     // 失败原因（计算失败时）

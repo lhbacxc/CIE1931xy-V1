@@ -63,7 +63,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 | selftest | 构建主工程，用 .NET 8 Desktop 宿主执行 --selftest |
 | run | 构建后启动对应 Configuration 下的 apphost.exe，不读取 dist |
 | restore / clean | 对 CIE1931xy.sln 执行对应命令 |
-| publish | 先构建、双基线回归、自检，再核验并重建 dist |
+| publish | 先构建、双基线回归、自检，再核验并更新 dist，保留配置和用户文件 |
 
 默认 Configuration=Release、发布 Runtime=win-x64。`-DotnetPath` 可以覆盖 SDK 查找，候选安装仍必须满足 global.json；脚本自动把工作目录切到根目录，结束后恢复调用者位置。
 
@@ -117,7 +117,7 @@ Exporter 本身不会自动关闭 HighlightSelection；UI 导出入口会克隆�
 
 ## 发布与清理
 
-发布前确认 `./dist/` 只存放发布产物。脚本校验 dist 的实际绝对路径位于项目根目录，并拒绝联接点/符号链接后才递归清理；该操作不会保留 dist 中的用户文件。
+发布脚本校验 dist 的实际绝对路径位于项目根目录，并拒绝联接点/符号链接；不再递归清空目录，只让 dotnet publish 更新自身产物，保留自动生成的配置和其他用户文件。不要手动把整个 dist 作为缓存删除。
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -128,13 +128,13 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 # 自包含版：.\build.ps1 -Target publish -SelfContained
 ```
 
-输出 `./dist/CIE1931xy.exe`；框架依赖版需要目标机器 .NET 8 Desktop Runtime，自包含版不需单独运行时。publish 的前置自检针对源码构建产物；发布后仍应单独验收实际发布文件。本轮没有重新发布，旧 dist 保留原状。
+输出 `./dist/CIE1931xy.exe`；框架依赖版需要目标机器 .NET 8 Desktop Runtime，自包含版不需单独运行时。publish 的前置自检针对源码构建产物；发布后仍应单独验收实际发布文件，近期源码及发布验证见后文各轮记录。
 
 ## Git 与忽略范围
 
 2026-11-19 按用户要求初始化本地 main 仓库，建立源码、资源、测试与文档的初始记录；未绑定远端。本地提交用于保留开发历史，提交说明默认中文。
 
-`./.gitignore` 排除工程下 bin/obj、根目录 dist/artifacts、TestResults、CodeGraph 数据与验证目录、日志/临时备份、个人 IDE 状态及 .env 配置；.env.example/sample/template 可以保留。共享 VS Code 配置、资源图片、doc/screens 历史截图和 tests/oracle JSON/文本保留在版本管理中，不按图片/CSV/TXT/SVG 扩展名整体忽略。
+`./.gitignore` 排除工程下 bin/obj、根目录 dist/artifacts、TestResults、CodeGraph 数据与验证目录、日志/临时备份、个人 IDE 状态、程序自动生成的 CIE1931xy.settings.json 及其临时文件、.env 配置；.env.example/sample/template 可以保留。共享 VS Code 配置、资源图片、doc/screens 历史截图和 tests/oracle JSON/文本保留在版本管理中，不按图片/CSV/TXT/SVG 扩展名整体忽略。
 
 `./.gitattributes` 自动识别文本并规范仓库换行；源码、JSON 和文档检出为 LF，PowerShell/解决方案检出为 CRLF，位图/图标按二进制处理。tests/oracle 的 TXT 输入保留原始字节和 CRLF/LF/末尾换行，避免改变经典解析回归用例。不改变 UTF-8 内容或 BOM。
 
@@ -240,3 +240,51 @@ Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，SelfTest 通�
 - 临时流程检查确认按钮/菜单同步、xy/u'v' 黑底、PNG/TIFF 四角纯黑或纯白、SVG 的完整背景矩形及无内嵌 image；黑白 SVG 的渐变色标序列相同，恢复白底的预览与切换前完全相同。
 - 本机 175% 与模拟 100%–200%、三种窗口尺寸、窄/宽侧栏、三个页签及对话框布局检查均通过，`LAYOUT OK`、失败 0。设置区增高以容纳开关。Edge 实际渲染检查了黑白 SVG 的坐标轴、刻度、波长标签、数据标签与图例。
 - 临时样例位于被忽略的 `./.codegraph/validation/black-background/`。沿用已记录的临时离线发布参数，更新 `./dist/CIE1931xy.exe` 并核验 SHA256 一致，旧程序备份于被忽略的 `./.codegraph/validation/before-black-background/`。README、架构说明、入门指南与 TODO 已同步。
+
+## 2026-11-20 光谱隐藏与快捷键验收
+
+- 光谱右键菜单新增隐藏/显示并标注 Space；删除标注 Delete。表格支持多选与连续切换，隐藏后保留原选择、名称、样式与计算结果；图片排除隐藏项，CSV/TXT 保留全部数据。README 与架构说明同步行为及键盘处理约束。
+- Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，新版数值与导出自检通过。临时隐藏窗口集成检查通过 28 项：真实多列光谱导入、通过窗口消息触发表格快捷键、混合选择、无选择、右键隐藏/恢复/删除、删除最后一条及计算行同步。
+- xy/u'v' 下全部隐藏的 GDI 图像与无曲线图逐像素一致，SVG 文本完全一致，恢复后 SVG 改变；图例、标签和选中高亮一并排除。PNG/TIFF 从同一 GDI 渲染结果保存；CSV/TXT 隐藏前后内容一致（TXT 比较排除生成时间）。本机 175% 缩放的已有布局与输入流程检查通过，`LAYOUT OK`、失败 0；未实测跨显示器拖动。
+- 修复两项实际验收问题：WinForms 不接受裸 Space 作为菜单 ShortcutKeys，改为显示表格快捷键提示；无控制台的单文件进程设置 Console.OutputEncoding 失败，改用 UTF-8 标准输出流回退。实际发布文件自检及重定向中文 UTF-8 日志检查通过。
+- 沿用临时离线发布参数（缓存 NuGet 源、禁用单文件兼容性分析器），更新 `./dist/CIE1931xy.exe` 并核验 SHA256 一致。旧程序与临时检查文件保存在被忽略的 `./.codegraph/validation/curve-visibility/`；没有新增依赖、长期测试入口或修改经典计算。
+
+## 2026-11-20 图中文字字体与大小验收
+
+- 新增「字体与字号」按钮和视图菜单入口，默认数字/字母/科学符号 Times New Roman、汉字及中文标点 SimSun（宋体）；可选本机字体，并分别调整六类文字大小（8–64）。应用、取消、恢复默认及混排预览均通过；设置在 xy/u'v' 间共用，不跨进程保存。
+- GDI 与 SVG 共用 PlotTextLayout 的 Unicode 分段、测量与基线；SVG 使用 text/tspan 标注各段字体，保留混排空格和纵轴旋转，不嵌入字体文件。改字号时重新布局，过宽的数据标签和图例限制到图内可用空间；该适配不保证密集文字之间完全无重叠。
+- 最终 Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，源码自检及实际发布文件自检通过，发布日志为有效 UTF-8。临时字体/交互/导出检查共 56 项通过，覆盖六类大小、字体切换、中英文混排、组合附加符、扩展汉字、GDI/SVG 测量一致、字号进入 SVG、PNG/TIFF/SVG 及 1400×1400 / 300 DPI 核验。
+- Edge 实际渲染检查 xy/u'v' 的默认字体、全部文字大小 64 和 60 字长标签；六组 SVG 的文字边界均位于画布内（允许 2px 渲染误差）。本机 175% 以及模拟 100%–200%、三种窗口尺寸、窄/宽侧栏、所有页签和字体窗口的初始/最小尺寸检查通过，`LAYOUT OK`、失败 0；未实测跨显示器拖动。
+- 修复实际交互检查发现的空下拉列表初始化异常，以及流式布局把混排预览面板压成零高度的问题；临时 Font 和 GdiCanvas 的 Pen/Brush 均按生命周期释放。未新增依赖或修改经典界面/算法。
+- 沿用缓存 NuGet 源和禁用单文件兼容性分析器的临时发布参数，更新 `./dist/CIE1931xy.exe`，复制前后 SHA256 一致；旧程序、窗口截图、输出及边界记录位于被忽略的 `./.codegraph/validation/fonts/`。README、架构说明、入门指南、AGENTS 和 TODO 已同步。
+
+## 2026-11-20 程序同目录配置保存验收
+
+- 新版偏好写入 AppContext.BaseDirectory 下的 CIE1931xy.settings.json，包含图型、显示开关、中英文字体与六类大小、两套轴标题/间距、导出 DPI 与文件名；导图按最后文件扩展名选择格式。400ms 合并变更，关闭时补存，加载期间抑制保存；业务数据、单项样式、隐藏/选择状态和渲染缓存不持久化。
+- Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，源码及实际单文件自检通过，UTF-8 日志检查通过。配置专项检查共 39 项通过，包含不同工作目录、首次/无变更启动、取消编辑、损坏/null/未来版本/非法 UTF-8、部分字段、非法范围、不可用字体、文件被锁时保留旧配置并清理临时文件，以及解除锁定后重试。
+- 通过两个独立进程修改并恢复实际 MainForm，验证背景配色、开关与禁用状态、字体/大小、两种轴标题、DPI 与文件名；立即关闭仍保存最新修改，重启前后 SVG 文本完全一致，恢复时原配置不被重写，数据仍为空。带配置的实际发布 exe 在不同工作目录启动并进入输入空闲，配置未被重写；自检不修改程序旁配置。
+- build.ps1 保留原目录范围与联接点校验，移除整个 dist 的递归清空。提取并运行真实 Invoke-Publish 函数、调用 SDK 发布后，预置配置与用户 TXT 的 SHA256 均不变，`PUBLISH PRESERVATION OK`；未新增依赖。
+- 沿用缓存 NuGet 源及禁用单文件兼容性分析器的临时发布参数，更新 `./dist/CIE1931xy.exe` 并核验 SHA256 一致。旧程序、配置样例、重启对照及发布检查保存在被忽略的 `./.codegraph/validation/settings/`；README、架构说明、入门指南、AGENTS、TODO 及忽略规则同步。
+
+## 2026-11-20 图片导出成功提示验收
+
+- MainForm 的 PNG/TIFF/SVG 保存成功后统一弹出「导出成功」信息框，显示完整保存位置，保留状态栏记录。取消保存直接返回，异常分支提示错误后立即返回；Exporter、自检与数据导出行为未改。
+- Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，源码及实际发布文件自检通过。临时原生对话框集成检查 19 项通过：三种图片格式各出现一次成功提示并包含保存路径，提示前文件存在且有效，PNG/TIFF 为 1400×1400；取消无文件及成功提示，保存路径选定后模拟文件被锁，写入失败只提示错误并保留旧文件。
+- 沿用缓存 NuGet 源、禁用单文件兼容性分析器的临时发布参数，更新 `./dist/CIE1931xy.exe` 并核验 SHA256 一致，配置保留。旧程序与临时导出检查位于被忽略的 `./.codegraph/validation/export-notification/`；README、架构说明和 TODO 已同步。
+
+## 2026-11-20 左下显示设置提示裁切修复
+
+- 原因是新增字体按钮后设置行换行，固定 374 逻辑像素的设置区不足，底部快捷键提示被滚动区裁切。现将提示独立固定到底部并分三行，根据宽度/字体/DPI 测量高度；主面板按实际内容与父容器空间调整，为数据页签保留空间，小窗口只滚动设置项。清空按钮改为与坐标轴/字体按钮相同的按文字尺寸布局。
+- 本机 175% 的启动截图确认三行提示完整、三个按钮同排，默认窗口无设置区滚动条。临时布局检查覆盖启动状态、1000×640/1200×800/1400×900、窄/宽侧栏、三个页签及对话框；本机 175% 和模拟 100%–200% 均为 `LAYOUT OK`、失败 0，并检查提示不在滚动容器、不越界、不被设置项覆盖及所有快捷键文本保留。未实测跨显示器拖动。
+- Release 构建 0 警告、0 错误，两套经典 oracle 各 9/9，源码及实际单文件自检通过。沿用缓存 NuGet 源和禁用单文件兼容性分析器的临时发布参数更新 `./dist/CIE1931xy.exe`，SHA256 一致，配置保留。旧程序、截图与自检文件位于被忽略的 `./.codegraph/validation/bottom-hint/`；README 与架构说明同步布局约束。
+
+## 2026-11-21 运行环境与缺失提示核实
+
+- 当前 dist 与上一轮验证发布文件 SHA256 相同，属于 win-x64 / WinExe / 框架依赖单文件。runtimeconfig 要求 Microsoft.NETCore.App 和 Microsoft.WindowsDesktop.App 8.0.0，默认使用可用的 .NET 8 补丁版本；本机已安装两项 8.0.31。App host 版本为 8.0.34，不能将它当作所需运行时最低版本或 SDK 版本。
+- 仅对子进程将 DOTNET_ROOT_X64 / DOTNET_ROOT 指向空目录，并设置 DOTNET_DISABLE_GUI_ERRORS=1 避免实际弹窗，验证原 dist 在进入 C# 入口前退出，报「You must install .NET to run this application」、架构 x64、.NET location Not found，含下载入口及 0x80008083（hostfxr.dll 未找到）。未卸载或修改本机运行时；证据位于被忽略的 `./.codegraph/validation/runtime-requirements/`。
+- [Microsoft 文档](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables#dotnet_disable_gui_errors) 说明 GUI apphost 默认提供部分启动错误弹窗，设置该变量才只写 stderr。当前 Program.Main 无自定义中文运行时检查；实际 GUI 缺环境弹窗未在本轮显示。README 与 TODO 同步当前要求及提示来源，未改源码或重新发布。
+
+## 2026-11-21 运行时目录选择追踪
+
+- 对真实 dist 的自检子进程设置 COREHOST_TRACE / COREHOST_TRACEFILE 追踪，不改变系统环境。启动器读取 HKLM 的 x64 .NET InstallLocation，选中机器级 dotnet 根目录，加载其 host/fxr/8.0.31/hostfxr.dll，随后在同一根目录下选中 Microsoft.NETCore.App 和 Microsoft.WindowsDesktop.App 8.0.31；未使用用户目录 SDK 自带的 10.0.15。日志位于被忽略的 `./.codegraph/validation/runtime-search/host-trace.log`。
+- 当前无 DOTNET_ROOT 系列环境覆盖。按 [Microsoft 的 .NET 7+ 规则](https://learn.microsoft.com/en-us/dotnet/core/compatibility/deployment/7.0/multilevel-lookup)，exe 在环境指定目录、注册目录或默认目录中选定第一处 .NET 安装，之后只在该根目录中查找所需框架；与通过特定 dotnet.exe 启动 DLL 的目录选择区别开。README 同步部署说明，未改源码或重新发布。

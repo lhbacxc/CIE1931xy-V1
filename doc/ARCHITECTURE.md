@@ -8,7 +8,11 @@
 
 主入口及 GoldenTests 控制台输出统一 UTF-8，供开发脚本重定向日志使用。编译使用 global.json 约束的 .NET 10 SDK，运行目标仍为 .NET 8；build.ps1 分别寻找 SDK 与匹配目标的运行时宿主，开发工具版本不会自动改变业务计算。
 
-MainForm 是新版交互协调器，持有 `List<CieCurve>`、`List<CiePoint>` 和 `DiagramStyle`；数据不经过数据库或文件持久化。曲线包含原始波长/强度、名称、标记样式和结果缓存；坐标点包含 xy、样式和派生 CCT，U/V 为换算属性。导出文件名也只在当前进程内保存。
+MainForm 是新版交互协调器，持有 `List<CieCurve>`、`List<CiePoint>` 和 `DiagramStyle`；业务数据不经过数据库或文件持久化。曲线包含原始波长/强度、名称、标记样式和结果缓存；坐标点包含 xy、样式和派生 CCT，U/V 为换算属性。软件偏好及导出文件名单独通过 JSON 配置保存。
+
+`Core/AppSettings.cs` 定义有版本的偏好白名单：图型、各显示开关、字体与大小、两种图型的轴标题/间距、导出 DPI 与文件名。`Core/SettingsStore.cs` 读写 UTF-8 JSON；配置路径为 AppContext.BaseDirectory 下的 CIE1931xy.settings.json，取实际程序目录而非工作目录。读取后补默认值、核验版本与数值范围；文件缺失正常使用默认，损坏或不可读时反馈状态，不在初始化时重写原文件。字体不可用时回退本机默认字体。
+
+`MainForm.Settings.cs` 协调恢复及保存：BuildUi/ApplyStyleDefaults 后恢复样式和控件，期间抑制 UI 事件，再启用保存；字体、坐标轴等对话框只在应用后触发。400ms Timer 合并连续更改，关闭时补存尚未写完的修改，比较规范化快照避免无变更写入。完整 JSON 先写到同目录独立临时文件并 Flush，再替换目标；失败保留旧配置、清理自身临时文件并提示状态。配置不包含原始数据、单条曲线样式、隐藏/选中状态、窗口几何、固定坐标范围或 FontScale 等渲染缓存；经典入口及自检不读写。测试可用 MainForm(string settingsPath) 隔离路径，传 null 禁用保存。
 
 文件导入按文件捕获异常；解析器返回 `ParseResult.Curves/Points/Warnings/Errors`，成功项进入内存模型，警告/错误进入消息与状态反馈。导入后更新表格、必要时切到坐标点页，再请求重绘。经典链路使用 `ParseFailure` 和 `CieMath.Status`，由 Form1 映射为对话框。
 
@@ -47,13 +51,19 @@ MainForm 是新版交互协调器，持有 `List<CieCurve>`、`List<CiePoint>` �
 
 数据操作栏位于左侧表格上方，包含「导入光谱 / 输入数据」和「批量改名」两组；图形操作栏位于右侧预览上方，包含「颜色 / 描边」和「导出数据 / 导出图片」两组。`MakeToolbar` 统一两侧的按钮高度、内边距与背景；`AddToolbarGroup` 使用嵌套 FlowLayoutPanel，组内不换行、外层按整组换行。组内间距为 `MainForm.ButtonSpacing`（6 个逻辑像素），组间为其三倍，换行间距为 6；显示设置及对话框按钮仍统一使用 6 个逻辑像素。`UpdateTables` 同步无数据时的按钮禁用状态，图片导出保留空白底图能力。
 
-显示设置采用可伸缩的两列布局，标签、开关与提示按文字调整尺寸，设置区不足时可纵向滚动。统一输入数据、单项改名、批量改名对话框共用独立的 96dpi 初始化与自动布局按钮区；多行提示在宽度、字体或 DPI 变化后重新测量高度。经典窗口仍保持独立的 DpiUnaware 策略。
+显示设置采用可伸缩的两列布局，标签和开关按文字调整尺寸；主设置面板按内容的 PreferredSize 和父容器空间测量高度，为数据页签预留空间。快捷键提示独立 Dock=Bottom，按宽度/字体/DPI 重测高度并分三行显示，不放进可滚动的设置项容器；小窗口只滚动设置项。坐标轴、字体和清空按钮共用按文字尺寸布局的 MakeBarButton，避免清空按钮的旧 202px 最小宽度迫使额外换行；测量用重入保护防止布局事件循环。统一输入数据、单项改名、批量改名对话框共用独立的 96dpi 初始化与自动布局按钮区；多行提示在宽度、字体或 DPI 变化后重新测量高度。经典窗口仍保持独立的 DpiUnaware 策略。
 
 `InputData` 合并原来的坐标输入与粘贴窗口，数据类型为自动识别、色坐标或光谱；`Ctrl+Shift+O` 打开同一窗口并预选色坐标，`Ctrl+Shift+V` 打开默认输入窗口。`ParsePastedText` 按指定类型或自动判断调用解析器，并统一初始化名称、颜色、描边、形状，更新表格、切换相关页签与请求重绘；主窗口 `Ctrl+V` 读取剪贴板后复用该方法。经典解析与计算未改。
 
 `UI/RoundedControls.cs` 为新版按钮、按钮式开关、下拉框与数值输入提供 4 个逻辑像素的小圆角，圆角和描边随 DPI 缩放。按钮/开关只替换绘制，沿用 WinForms 输入、自动尺寸、DialogResult 与可访问性；原生输入控件只补绘外框。共享绘制保留悬停、按下、禁用和键盘焦点提示。经典 Form1 不使用这些控件。
 
 `Core/Rendering/PlotCanvas.cs` 定义 `IPlotCanvas` 和矩形/对齐等绘制协议；`GdiCanvas` 与 `SvgCanvas` 是两种输出。`DiagramRenderer` 接收样式和模型，完成布局、坐标映射、背景、轴、光谱边界、黑体、数据标记及图例，避免各导出格式自行计算点位置。
+
+新版字体设置位于 `MainForm.FontSettings.cs`，MainForm 通过 partial 拆分该交互。设置窗口列出本机字体，分别编辑数字/字母字体和中文字体，以及坐标轴标题、刻度、波长、数据标签、图例和黑体温度的大小（8–64）；默认 Times New Roman / SimSun（宋体），大小依次为 26/22/20/20/20/17。应用后写入 DiagramStyle 并调度配置保存，取消不修改，恢复默认只重置窗口字段，须应用才生效。xy/u'v' 共用设置并跨进程保存，经典位图文字保持原状。
+
+`IPlotCanvas.ChineseFontFamily` 由渲染器在开始绘制时设置。`PlotTextLayout` 按 Unicode Rune 分段，将汉字及中文标点与数字/字母/科学符号分开，组合附加符继承前一段字体；GDI 与 SVG 共用各段宽度和公共基线，测量与绘制使用相同字体。SVG 用 text/tspan 显式标注字体并保持混排空格，旋转围绕原对齐点，不嵌入字体文件。文字大小沿用像素基准并按画布缩放，不能当作 PNG/TIFF 的物理 pt；DPI 仍只影响图片元数据。
+
+坐标轴标题、数据标签和图例按所选字体重新测量；过宽的数据标签和图例缩小到图内可用空间，数据标签位置也限制在绘图区。该适配不保证密集文字之间完全无重叠。`PlotTextLayout` 释放临时 Font，GdiCanvas 实现 IDisposable 并由 Exporter 释放缓存的 Pen/Brush；新增绘图调用同样须管理画布资源。
 
 新版 `MainForm.ApplyStyleDefaults` 固定 `UseBitmapBackground=false`，xy/u'v' 均使用可编辑的矢量绘图，不再提供位图/矢量背景类型选择、切换菜单或新版 Ctrl+B。设置区说明统一矢量绘图便于独立控制网格和标注，导出仍可选择 PNG/TIFF 位图或 SVG 矢量图。预览仍由 GDI 渲染为 Bitmap 供 PictureBox 显示，并非新增 SVG 浏览器控件；SVG 导出使用同一绘图协议输出矢量元素。
 
@@ -83,7 +93,13 @@ SVG 背景采用 257 个横向颜色样本与 512–2048 条细扫描带，每�
 
 UI 图片导出前克隆 DiagramStyle 并关闭 HighlightSelection。Exporter 本身不会自动排除选中高亮，其他调用者需要自行设置。
 
+光谱模型 `CieCurve.Visible` 默认 true，仅控制绘图可见性；`DiagramRenderer.DrawCurves` 和 `DrawLegend` 排除隐藏曲线，GDI 与 SVG 共用该判断。隐藏不移除模型，也不影响计算结果或 CSV/TXT 数据导出。光谱表格右键提供隐藏/显示与删除并标注快捷键；`Space` / `Delete` 由表格自身处理，支持多选，不占用全局 `Ctrl+H` 批量改名。可见性切换原地更新名称标记和文字颜色，保留选中行；行 Tag 保存曲线模型，隐藏和删除按模型引用操作。
+
+WinForms 的菜单 `ShortcutKeys` 不接受裸 `Space`，隐藏/显示菜单用 `ShortcutKeyDisplayString` 标注表格快捷键，避免打开右键菜单时抛异常。`Program.Main` 在无控制台的 WinExe 进程中设置输出代码页失败时，回退为直接使用 UTF-8 的标准输出 StreamWriter，确保实际单文件自检的重定向中文日志可读。
+
 ## 导出与检查边界
+
+`MainForm.ExportImage` 在 PNG/TIFF/SVG 的保存调用成功返回后，统一弹出带完整保存位置的「导出成功」信息框，并保留原有状态栏记录。保存对话框取消时直接返回，异常分支显示错误后也立即返回，避免失败后继续显示成功；Exporter 和自检仍不包含交互提示。
 
 | 输出 | 实现与限制 |
 | --- | --- |

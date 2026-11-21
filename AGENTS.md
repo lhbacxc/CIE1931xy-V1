@@ -36,6 +36,8 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - 经典链路 `Form1 → SpectralInput → CieMath → VbText` 保留 VB 语义、1nm/5nm 和四位小数取整；改动须检查 oracle。
 - 新版链路 `MainForm → SpectrumCsvParser/CoordinateParser → Colorimetry → Model → DiagramRenderer/Exporter` 默认逐点求和、未归一、未做经典四位取整；不要把两条链路混同。
 - 新版工作台的 xy/u'v' 统一使用矢量绘图，PNG/TIFF/SVG 仅为导出格式选项，不恢复位图背景选择或新版 Ctrl+B。渲染通过 `IPlotCanvas` 共用 GDI 与 SVG 输出；新增绘制能力须核对两种实现。新版 SVG 使用渐变扫描带与平滑轮廓裁剪、不内嵌 PNG；背景不能复用像素透明掩码，修复后须核对放大显示的接缝与边界缺口。底层位图兼容分支及经典底图保留。
+- 新版图中文字默认数字/字母 Times New Roman、中文 SimSun（宋体）；混排分段、测量与基线共用 `./src/CIE1931xy.Rebuilt/Core/Rendering/PlotTextLayout.cs`。字体/大小交互位于 `./src/CIE1931xy.Rebuilt/MainForm.FontSettings.cs`；改字体绘制须同时核对 GDI 与 SVG、旋转标题及文字边界，释放临时 Font 与 GdiCanvas 资源。经典位图文字不受该设置影响。
+- 新版偏好保存为实际 exe 同目录的 `./CIE1931xy.settings.json`，以 AppContext.BaseDirectory 定位；恢复后才启用保存，不能在初始化时覆盖用户配置。存储白名单、UTF-8、数值校验及同目录完整写入后替换由 Core/AppSettings.cs、Core/SettingsStore.cs 与 MainForm.Settings.cs 维护；不保存业务数据或渲染缓存。经典入口及自检不读写该配置。
 - 位图固定 684×732，轴矩形为 (59,12) 起、600×675；对应 xy 范围 0–0.8 / 0–0.9。坐标映射不可使用数据包络替代该范围。
 - 新版 PerMonitorV2 与经典 DpiUnaware 分别维护；不能直接把经典窗口改为新版缩放方式并宣称像素兼容。
 - 新版手工布局必须在全部控件加入后才恢复布局并执行首次 DPI 缩放；按钮、标签、设置行和对话框要按文字与可用空间布局。具体约束见架构说明的 DPI 章节。
@@ -47,7 +49,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 - `./global.json` 约束 .NET 10 SDK（基准 10.0.404、latestFeature、禁止预览版）；主工程仍为 .NET 8 目标。脚本分别定位 SDK 和 .NET 8 运行时宿主，不能把 SDK 版本当作程序运行版本。
 - `-Target test` 构建测试工程，并分别运行两套 oracle；正常结果是每套 9/9。SDK 在用户目录时优先通过脚本执行测试，避免使用缺少 .NET 8 的 SDK 宿主直接运行 DLL。
 - `-Target run` 构建后启动对应 Configuration 下的主程序，不读取 dist；VS Code 配置也调试 Debug apphost.exe。
-- publish 先构建、回归、自检，再核验并重建 `./dist/`；执行前确认其中没有用户数据。工程下的 bin/obj 和根目录 dist 均为产物。
+- publish 先构建、回归、自检，再核验并更新 `./dist/` 的发布产物，不清空目录，保留配置与其他用户文件。工程下的 bin/obj 是产物，dist 中同时可能包含用户配置；不能把整个目录当作可删除产物。
 - GoldenTests 只校验经典解析/计算字段及格式化文本，不校验窗体、表格状态或像素；新版解析/渲染用 `--selftest` 补充。
 - 自检含 12 个数值检查及 PNG/SVG/CSV/TXT 文件检查，没有 TIFF 或界面自动化检查；u'v' 的 bitmap 组合仍回退矢量背景。
 - 解决方案 `./CIE1931xy.sln` 包含主程序和 GoldenTests；编辑规范见 `./.editorconfig`，编辑器配置见 `./.vscode/`。没有独立测试框架、覆盖率或 CI，不能把自定义回归命令写成 dotnet test。

@@ -56,7 +56,8 @@ namespace CIE1931xy.Core.Rendering
             }
         }
 
-        public string FontFamily = "Microsoft YaHei UI";
+        public string FontFamily = "Times New Roman";
+        public string ChineseFontFamily = "SimSun";
         public double TitleFontSize = 30.0;
         public double AxisFontSize = 26.0;
         public double TickFontSize = 22.0;
@@ -126,6 +127,7 @@ namespace CIE1931xy.Core.Rendering
         {
             DiagramStyle s = _style;
             double scale = canvas.PixelScale;
+            canvas.ChineseFontFamily = s.ChineseFontFamily;
             bool bitmapMode = s.UseBitmapBackground && s.Kind == DiagramKind.Xy1931;
             _fs = Math.Max(0.85, s.FontScale);
 
@@ -653,7 +655,7 @@ namespace CIE1931xy.Core.Rendering
             for (int i = 0; i < _curves.Count; i++)
             {
                 CieCurve curve = _curves[i];
-                if (curve == null || curve.Result == null) continue;
+                if (curve == null || !curve.Visible || curve.Result == null) continue;
                 double dx, dy;
                 PlotSpace.ToDiagram(s.Kind, curve.Result.x, curve.Result.y, out dx, out dy);
                 float px = tr.X(dx), py = tr.Y(dy);
@@ -707,9 +709,20 @@ namespace CIE1931xy.Core.Rendering
             DiagramStyle s = _style;
             double x = px + (s.MarkerSize + 4) * canvas.PixelScale;
             double y = py - (s.MarkerSize + 3) * canvas.PixelScale;
-            SizeD size = canvas.MeasureText(name, s.FontFamily, s.LabelFontSize * _fs, false);
+            double fontSize = s.LabelFontSize * _fs;
+            SizeD size = canvas.MeasureText(name, s.FontFamily, fontSize, false);
+            double pad = 4 * canvas.PixelScale;
+            double fit = Math.Min(1, Math.Min(Math.Max(1, tr.Width - 2 * pad) / Math.Max(1, size.Width),
+                Math.Max(1, tr.Height - 2 * pad) / Math.Max(1, size.Height)));
+            if (fit < 1)
+            {
+                fontSize *= fit;
+                size = canvas.MeasureText(name, s.FontFamily, fontSize, false);
+            }
+            x = Math.Max(tr.Left + pad, Math.Min(x, tr.Left + tr.Width - pad - size.Width));
+            y = Math.Max(tr.Top + pad + size.Height, Math.Min(y, tr.Top + tr.Height - pad));
             canvas.DrawText(name, LabelColor(tr, x + size.Width / 2, y - size.Height / 2),
-                s.FontFamily, s.LabelFontSize * _fs, false, x, y, TextAlignH.Left, TextAlignV.Bottom, 0);
+                s.FontFamily, fontSize, false, x, y, TextAlignH.Left, TextAlignV.Bottom, 0);
         }
 
         private Color LabelColor(PlotTransform tr, double px, double py)
@@ -808,7 +821,7 @@ namespace CIE1931xy.Core.Rendering
             List<Color> colors = new List<Color>();
             for (int i = 0; i < _curves.Count; i++)
             {
-                if (_curves[i] == null) continue;
+                if (_curves[i] == null || !_curves[i].Visible) continue;
                 names.Add(_curves[i].Name);
                 colors.Add(_curves[i].Color);
             }
@@ -831,6 +844,13 @@ namespace CIE1931xy.Core.Rendering
             }
             double boxW = maxW + fs * 2.8;
             double boxH = names.Count * lineH + pad * 2;
+            double fit = Math.Min(1, Math.Min(Math.Max(1, tr.Width - 20 * canvas.PixelScale) / boxW,
+                Math.Max(1, tr.Height - 20 * canvas.PixelScale) / boxH));
+            fs *= fit;
+            lineH *= fit;
+            pad *= fit;
+            boxW *= fit;
+            boxH *= fit;
             double x = tr.Left + tr.Width - boxW - 10 * canvas.PixelScale;
             double y = s.LegendBottomRight
                 ? tr.Top + tr.Height - boxH - 10 * canvas.PixelScale
@@ -850,7 +870,7 @@ namespace CIE1931xy.Core.Rendering
         private void DrawTitle(IPlotCanvas canvas, int width, double plotTop)
         {
             DiagramStyle s = _style;
-            canvas.DrawText(PlotSpace.Title(s.Kind), s.TextColor, s.FontFamily, s.TitleFontSize, true,
+            canvas.DrawText(PlotSpace.Title(s.Kind), s.TextColor, s.FontFamily, s.TitleFontSize * _fs, true,
                 width / 2.0, Math.Max(6 * canvas.PixelScale, plotTop - 28 * canvas.PixelScale),
                 TextAlignH.Center, TextAlignV.Top, 0);
         }

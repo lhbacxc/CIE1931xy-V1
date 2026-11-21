@@ -35,9 +35,9 @@ namespace CIE1931xy.Core.Export
             // Graphics 会按 120/96 的比例再缩放一次图片，导致底图放大、右边被裁。
             bmp.SetResolution(96, 96);
             using (Graphics g = Graphics.FromImage(bmp))
+            using (GdiCanvas canvas = new GdiCanvas(g, 1.0))
             {
                 g.Clear(Color.White);
-                GdiCanvas canvas = new GdiCanvas(g, 1.0);
                 DiagramStyle exportStyle = style;
                 DiagramStyle scaled = style.Clone();
                 scaled.FontScale = Math.Max(1.0, Math.Min(2.4, (width + height) / 2000.0));

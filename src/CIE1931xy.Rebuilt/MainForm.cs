@@ -17,7 +17,7 @@ namespace CIE1931xy
     /// 右侧 = 色度图画布 + 工具条 + 状态栏。
     /// 经典界面仍保留在 Form1（启动参数 --classic）。
     /// </summary>
-    internal sealed class MainForm : Form
+    internal sealed partial class MainForm : Form
     {
         private const int ButtonSpacing = 6;
         private enum DataInputKind { Auto, Coordinates, Spectrum }
@@ -66,11 +66,17 @@ namespace CIE1931xy
         private Button _btnExportData;
         private bool _suppressUiEvents;
 
-        public MainForm()
+        public MainForm() : this(Path.Combine(AppContext.BaseDirectory, SettingsStore.FileName))
         {
+        }
+
+        internal MainForm(string settingsPath)
+        {
+            _settingsPath = settingsPath;
             BuildUi();
             // 启动时不要示例数据（用户要求：打开软件默认无数据），示例仍可从“载入示例”按钮加载
             ApplyStyleDefaults();
+            InitializeSettings();
             UpdateTables();
             ScheduleRender();
         }
@@ -139,7 +145,7 @@ namespace CIE1931xy
             AddTab(_tabs, "三刺激值", _gridXyz);
             AddTab(_tabs, "坐标点", _gridPoints);
 
-            // 双击首列就地改名；右键弹出"标记/颜色/标签/删除"菜单（等价于 CIEdraw 的表格管理）
+            // 双击首列改名；右键管理样式、标签、显示状态及删除。
             _gridCurves.CellDoubleClick += GridCurveCellDoubleClick;
             _gridPoints.CellDoubleClick += GridPointCellDoubleClick;
             _gridCurves.CellMouseDown += GridCurveCellMouseDown;
@@ -316,6 +322,7 @@ namespace CIE1931xy
             _menuBlackBackground = MakeItem("黑色背景（关闭为白色）", delegate { ToggleCheck(_chkBlackBackground); }, Keys.None);
             view.DropDownItems.Add(_menuBlackBackground);
             view.DropDownItems.Add(MakeItem("坐标轴名称与间距…", delegate { EditAxisTitles(); }, Keys.None));
+            view.DropDownItems.Add(MakeItem("字体与字号…", delegate { EditFonts(); }, Keys.None));
             view.DropDownItems.Add(new ToolStripSeparator());
             view.DropDownItems.Add(MakeItem("图例", delegate { ToggleCheck(_chkLegend); }, Keys.None));
             view.DropDownItems.Add(MakeItem("波长标注", delegate { ToggleCheck(_chkWavelength); }, Keys.None));
@@ -422,7 +429,8 @@ namespace CIE1931xy
         private Panel BuildStylePanel()
         {
             Panel panel = new Panel();
-            panel.Height = 374;   // 留出背景开关及底部提示的空间
+            panel.Height = 374;   // 初始尺寸；加入父容器后按实际内容测量高度
+            panel.Name = "StylePanel";
             panel.BackColor = Color.FromArgb(0xF0, 0xF3, 0xF7);
             panel.Padding = new Padding(12, 8, 12, 8);
 
@@ -435,6 +443,7 @@ namespace CIE1931xy
             panel.Controls.Add(title);
 
             FlowLayoutPanel flow = new FlowLayoutPanel();
+            flow.Name = "StyleOptions";
             flow.Dock = DockStyle.Fill;
             flow.FlowDirection = FlowDirection.TopDown;
             flow.WrapContents = false;
@@ -489,17 +498,55 @@ namespace CIE1931xy
             Button btnAxes = MakeBarButton("坐标轴设置", false);
             btnAxes.Click += delegate { EditAxisTitles(); };
             row3.Controls.Add(btnAxes);
-            Button btnClear = MakeSmallButton("清空全部数据");
+            Button btnFonts = MakeBarButton("字体与字号", false);
+            btnFonts.Click += delegate { EditFonts(); };
+            row3.Controls.Add(btnFonts);
+            Button btnClear = MakeBarButton("清空全部数据", false);
             btnClear.Click += delegate { ClearAll(); };
             row3.Controls.Add(btnClear);
             flow.Controls.Add(row3);
 
             Label note = new Label();
-            note.AutoSize = true;
+            note.Name = "ShortcutHint";
+            note.Dock = DockStyle.Bottom;
+            note.Padding = new Padding(0, ButtonSpacing, 0, 4);
             note.Margin = new Padding(0);
             note.ForeColor = Color.FromArgb(0x6B, 0x74, 0x80);
-            note.Text = "快捷键：Ctrl+O 导入 · Ctrl+V 粘贴 · Ctrl+P 黑体线\r\n表格里 Ctrl/Shift 多选，Delete 删除选中项";
-            flow.Controls.Add(note);
+            note.Text = "快捷键：Ctrl+O 导入 · Ctrl+V 粘贴 · Ctrl+P 黑体线\r\n表格：Ctrl/Shift 多选 · Delete 删除\r\n光谱：Space 隐藏/显示";
+            panel.Controls.Add(note);
+            flow.BringToFront();
+
+            bool adjusting = false;
+            Action fitPanel = delegate
+            {
+                if (adjusting || panel.Parent == null) return;
+                adjusting = true;
+                try
+                {
+                    FitWrappedLabel(note);
+                    FitStyleRows(flow);
+                    flow.PerformLayout();
+                    int needed = title.Height + note.Height + panel.Padding.Vertical
+                        + flow.GetPreferredSize(new Size(Math.Max(1, flow.ClientSize.Width), 0)).Height;
+                    int available = panel.Parent.ClientSize.Height - panel.Parent.Padding.Vertical
+                        - LogicalToDeviceUnits(120);
+                    foreach (Control sibling in panel.Parent.Controls)
+                        if (sibling != panel && sibling.Dock == DockStyle.Top) available -= sibling.Height;
+                    // 为数据页签保留空间；设置项可滚动，底部提示始终在滚动区外。
+                    int minimum = title.Height + note.Height + panel.Padding.Vertical + LogicalToDeviceUnits(60);
+                    panel.Height = Math.Max(minimum, Math.Min(needed, available));
+                }
+                finally { adjusting = false; }
+            };
+            flow.Layout += delegate { fitPanel(); };
+            note.SizeChanged += delegate { fitPanel(); };
+            note.FontChanged += delegate { fitPanel(); };
+            panel.DpiChangedAfterParent += delegate { fitPanel(); };
+            panel.ParentChanged += delegate
+            {
+                if (panel.Parent != null) panel.Parent.Layout += delegate { fitPanel(); };
+                fitPanel();
+            };
             return panel;
         }
 
@@ -570,7 +617,7 @@ namespace CIE1931xy
             _numDpi = MakeNumber(72, 1200, 300);
             _numDpi.Width = 80;
             _numDpi.Margin = new Padding(0, 0, 6, 0);
-            _numDpi.ValueChanged += delegate { _exportDpi = (int)_numDpi.Value; };
+            _numDpi.ValueChanged += delegate { _exportDpi = (int)_numDpi.Value; ScheduleSettingsSave(); UpdateHint(); };
 
             Label unit = new Label();
             unit.Text = "DPI";
@@ -985,6 +1032,8 @@ namespace CIE1931xy
                 CurveResult r = c.Result;
                 string range = F(r.WlMin) + "–" + F(r.WlMax);
                 int row = _gridCurves.Rows.Add(c.Name, ShapeName(c.Shape), "", "");
+                _gridCurves.Rows[row].Tag = c;
+                UpdateCurveVisibilityRow(_gridCurves.Rows[row], c);
                 _gridCurves.Rows[row].Cells[2].Style.BackColor = c.Color;
                 _gridCurves.Rows[row].Cells[2].Style.SelectionBackColor = c.Color;
                 _gridCurves.Rows[row].Cells[3].Style.BackColor = c.OutlineColor;
@@ -1209,7 +1258,9 @@ namespace CIE1931xy
             CieCurve curve = _curves[e.RowIndex];
             if (curve == null) return;
             _gridCurves.ClearSelection();
+            _gridCurves.CurrentCell = _gridCurves.Rows[e.RowIndex].Cells[0];
             _gridCurves.Rows[e.RowIndex].Selected = true;
+            _gridCurves.Focus();
 
             ContextMenuStrip menu = new ContextMenuStrip();
             menu.ShowImageMargin = false;
@@ -1252,13 +1303,14 @@ namespace CIE1931xy
             };
             menu.Items.Add(rename);
             menu.Items.Add(new ToolStripSeparator());
+            ToolStripMenuItem visibility = new ToolStripMenuItem(curve.Visible ? "隐藏这条曲线" : "显示这条曲线");
+            // WinForms 不接受裸 Space 作为菜单 ShortcutKeys；实际按键由表格处理。
+            visibility.ShortcutKeyDisplayString = "Space";
+            visibility.Click += delegate { ToggleCurveVisibility(new List<CieCurve> { curve }); };
+            menu.Items.Add(visibility);
             ToolStripMenuItem remove = new ToolStripMenuItem("删除这条曲线");
-            remove.Click += delegate
-            {
-                _curves.Remove(curve);
-                UpdateTables();
-                ScheduleRender();
-            };
+            remove.ShortcutKeys = Keys.Delete;
+            remove.Click += delegate { DeleteCurves(new List<CieCurve> { curve }); };
             menu.Items.Add(remove);
             menu.Show(_gridCurves, _gridCurves.PointToClient(Cursor.Position));
         }
@@ -1338,22 +1390,56 @@ namespace CIE1931xy
             menu.Items.Add(root);
         }
 
-        /// <summary>简易输入框（WinForms 没有内置 InputBox）。</summary>
+        /// <summary>光谱表格快捷键：Space 隐藏/显示，Delete 删除，支持多选。</summary>
         private void GridCurveKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode != Keys.Delete) return;
-            List<int> rows = new List<int>();
-            foreach (DataGridViewRow row in _gridCurves.SelectedRows)
-                if (row.Index >= 0) rows.Add(row.Index);
-            rows.Sort();
-            for (int i = rows.Count - 1; i >= 0; i--)
-            {
-                if (rows[i] < _curves.Count) _curves.RemoveAt(rows[i]);
-            }
+            if (_gridCurves.IsCurrentCellInEditMode ||
+                (e.KeyData != Keys.Delete && e.KeyData != Keys.Space)) return;
             e.Handled = true;
+            e.SuppressKeyPress = true;
+            List<CieCurve> curves = new List<CieCurve>();
+            foreach (DataGridViewRow row in _gridCurves.SelectedRows)
+            {
+                CieCurve curve = row.Tag as CieCurve;
+                if (curve != null) curves.Add(curve);
+            }
+            if (e.KeyData == Keys.Space) ToggleCurveVisibility(curves);
+            else DeleteCurves(curves);
+        }
+
+        private static void UpdateCurveVisibilityRow(DataGridViewRow row, CieCurve curve)
+        {
+            row.Cells[0].Value = curve.Name + (curve.Visible ? "" : "（已隐藏）");
+            row.Cells[0].ToolTipText = curve.Visible ? "Space 隐藏曲线；Delete 删除曲线" :
+                "曲线已隐藏，数据仍保留；Space 显示曲线；Delete 删除曲线";
+            row.DefaultCellStyle.ForeColor = curve.Visible ? SystemColors.ControlText : SystemColors.GrayText;
+            row.DefaultCellStyle.SelectionForeColor = curve.Visible ? Color.White : Color.FromArgb(0xDD, 0xE5, 0xF0);
+        }
+
+        private void ToggleCurveVisibility(List<CieCurve> curves)
+        {
+            if (curves.Count == 0) return;
+            // 混合选择时统一隐藏；全部隐藏时统一显示。原地更新表格，保留选择便于连续切换。
+            bool visible = !curves.Exists(delegate (CieCurve curve) { return curve.Visible; });
+            foreach (CieCurve curve in curves) curve.Visible = visible;
+            foreach (DataGridViewRow row in _gridCurves.Rows)
+            {
+                CieCurve curve = row.Tag as CieCurve;
+                if (curve != null) UpdateCurveVisibilityRow(row, curve);
+            }
+            ScheduleRender();
+            SetStatus((visible ? "已显示 " : "已隐藏 ") + curves.Count + " 条曲线。");
+        }
+
+        private void DeleteCurves(List<CieCurve> curves)
+        {
+            int removed = 0;
+            foreach (CieCurve curve in curves)
+                if (_curves.Remove(curve)) removed++;
+            if (removed == 0) return;
             UpdateTables();
             ScheduleRender();
-            SetStatus("已删除 " + rows.Count + " 条曲线。");
+            SetStatus("已删除 " + removed + " 条曲线。");
         }
 
         private void GridPointKeyDown(object sender, KeyEventArgs e)
@@ -1506,6 +1592,7 @@ namespace CIE1931xy
                 else { _style.UvAxisTitleX = titleX.Text.Trim(); _style.UvAxisTitleY = titleY.Text.Trim(); }
                 _style.AxisTitleGapX = (double)gapX.Value;
                 _style.AxisTitleGapY = (double)gapY.Value;
+                ScheduleSettingsSave();
                 ScheduleRender();
                 SetStatus("坐标轴名称与间距已更新，预览和图片导出同步。");
             }
@@ -1526,6 +1613,7 @@ namespace CIE1931xy
             _style.Bounds = FixedBounds();
             UpdateReferenceLineState();
             ScheduleRender();
+            ScheduleSettingsSave();
         }
 
         private void OnKindChanged()
@@ -1536,6 +1624,7 @@ namespace CIE1931xy
             _style.Bounds = FixedBounds();
             UpdateReferenceLineState();
             ScheduleRender();
+            ScheduleSettingsSave();
         }
 
         private void UpdateReferenceLineState()
@@ -1710,6 +1799,7 @@ namespace CIE1931xy
         private void ApplyExportName(string path)
         {
             if (!string.IsNullOrEmpty(path)) _lastExportName = Path.GetFileName(path);
+            ScheduleSettingsSave();
         }
 
         private void ExportImage()
@@ -1717,7 +1807,9 @@ namespace CIE1931xy
             using (SaveFileDialog dlg = new SaveFileDialog())
             {
                 dlg.Filter = "PNG 位图 (*.png)|*.png|TIFF 位图 (*.tif)|*.tif|SVG 矢量图 (*.svg)|*.svg";
-                dlg.FilterIndex = 1;
+                string extension = Path.GetExtension(_lastExportName);
+                dlg.FilterIndex = extension.Equals(".svg", StringComparison.OrdinalIgnoreCase) ? 3 :
+                    extension.Equals(".tif", StringComparison.OrdinalIgnoreCase) || extension.Equals(".tiff", StringComparison.OrdinalIgnoreCase) ? 2 : 1;
                 dlg.FileName = _lastExportName;
                 dlg.OverwritePrompt = true;
                 dlg.Title = "导出图片（位图 PNG/TIFF · 矢量 SVG）";
@@ -1748,7 +1840,10 @@ namespace CIE1931xy
                 catch (Exception ex)
                 {
                     MessageBox.Show(this, "导出失败：" + ex.Message, "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
                 }
+                MessageBox.Show(this, "图片已成功导出。\r\n\r\n保存位置：\r\n" + dlg.FileName,
+                    "导出成功", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 

@@ -28,10 +28,11 @@ namespace CIE1931xy.Core.Rendering
         public double Bottom { get { return Top + Height; } }
     }
 
-    /// <summary>绘图原语接口（坐标单位 = 输出像素；字号单位 = pt）。</summary>
+    /// <summary>绘图原语接口（坐标和文字大小使用输出像素，按 PixelScale 缩放）。</summary>
     internal interface IPlotCanvas
     {
         double PixelScale { get; }
+        string ChineseFontFamily { get; set; }
         void DrawLine(Color color, double width, double x1, double y1, double x2, double y2);
         void DrawPolyline(Color color, double width, float[] xs, float[] ys);
         void FillPolygon(Color color, float[] xs, float[] ys);

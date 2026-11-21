@@ -37,12 +37,16 @@ flowchart LR
 
 典型任务：文件、拖放或粘贴进入 `MainForm`，先识别光谱/坐标，再解析和计算，存入 `_curves` / `_points`；表格同步模型，140ms Timer 合并重绘请求。预览与图片导出共用渲染器，CSV/TXT 直接读取模型；没有 HTTP 请求链路。
 
+新版软件偏好独立保存到程序旁的 `./CIE1931xy.settings.json`：400ms 合并连续更改，关闭前补存，启动时恢复；不保存光谱/坐标数据。源码构建与发布版各自按实际运行目录读取配置，经典及自检入口不读写。配置和用户文件会在发布更新时保留。
+
 ## 目录职责与关键入口
 
 | 相对路径 | 职责 |
 | --- | --- |
 | `./src/CIE1931xy.Rebuilt/Program.cs` | CLI 参数、编码提供程序、DPI 策略、界面/自检入口 |
 | `./src/CIE1931xy.Rebuilt/MainForm.cs` | 新版布局、三页签、导入、选择、批量改名、样式及导出交互 |
+| `./src/CIE1931xy.Rebuilt/MainForm.FontSettings.cs` | 新版中英文字体、六类文字大小、混排预览及恢复默认交互 |
+| `./src/CIE1931xy.Rebuilt/MainForm.Settings.cs`、`./src/CIE1931xy.Rebuilt/Core/AppSettings.cs`、`./src/CIE1931xy.Rebuilt/Core/SettingsStore.cs` | 配置白名单、启动恢复、变更保存及 UTF-8 JSON 完整写入后替换 |
 | `./src/CIE1931xy.Rebuilt/UI/` | 新版控件的小圆角绘制，保留 WinForms 原生交互与自动尺寸 |
 | `./src/CIE1931xy.Rebuilt/Form1.cs`、`Form1.Designer.cs` | 经典事件逻辑与控件布局 |
 | `./src/CIE1931xy.Rebuilt/Core/` | 输入解析、模型、两条计算链路、CMF 表、黑体物理与资源加载 |
@@ -51,7 +55,7 @@ flowchart LR
 | `./src/CIE1931xy.Rebuilt/Resources/` | 两张 684×732 原版底图与图标，编译时嵌入 |
 | `./tests/GoldenTests/`、`./tests/oracle/` | 经典回归程序、两套 JSON 基线与输入数据 |
 | `./doc/`、`./doc/screens/` | 当前开发文档、历史工程记录与历史截图 |
-| `./dist/`、工程下 `bin/obj/` | 发布/构建产物；不属于事实源 |
+| `./dist/`、工程下 `bin/obj/` | 发布/构建产物；程序目录也可能生成个人配置，发布不清空 dist |
 | `./.codegraph/` | 本机 C# 符号、调用与依赖索引，不提交数据库 |
 
 ## 最先掌握的边界
@@ -92,6 +96,7 @@ codegraph status .
 | 经典算法兼容 | `Core/SpectralInput.cs`、`Core/CieMath.cs`、`Core/VbText.cs`；配套 GoldenTests |
 | 黑体公式与经典叠加样式 | `Core/PlanckianLocus.cs`、`Core/PlanckianOverlay.cs` |
 | 图层、标记、图例、字号与坐标映射 | `Core/Rendering/DiagramRenderer.cs`、`PlotSpace.cs` |
+| 图中文字字体、混排及测量 | `MainForm.FontSettings.cs`、`Core/Rendering/PlotTextLayout.cs`、`GdiCanvas.cs`、`SvgCanvas.cs` |
 | 真彩色域与 SVG 渐变、裁剪 | `Core/Rendering/ChromaBackground.cs`、`SvgCanvas.cs` |
 | 导出字段、DPI 与像素尺寸 | `Core/Export/Exporter.cs` 和 `MainForm` 的 ExportImage/ExportWidth/ExportHeight |
 | 新版布局、交互、选择 | `MainForm.cs`：BuildUi、BuildActionBar、CanvasMouseClick、BatchRename |

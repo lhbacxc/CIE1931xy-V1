@@ -18,14 +18,14 @@ namespace CIE1931xy.Core.Export
 
         /// <summary>按目标像素尺寸渲染整张图；DPI 只写入图片元数据（用于排版/打印密度，不再放大像素）。</summary>
         public static Bitmap RenderToBitmap(DiagramStyle style, IList<CieCurve> curves, IList<CiePoint> points,
-                                            int width, int height, int dpi)
+                                            int width, int height, int dpi, IList<CieArrow> arrows = null)
         {
             PlotTransform unused;
-            return RenderToBitmap(style, curves, points, width, height, dpi, out unused);
+            return RenderToBitmap(style, curves, points, width, height, dpi, out unused, arrows);
         }
 
         public static Bitmap RenderToBitmap(DiagramStyle style, IList<CieCurve> curves, IList<CiePoint> points,
-                                            int width, int height, int dpi, out PlotTransform transform)
+                                            int width, int height, int dpi, out PlotTransform transform, IList<CieArrow> arrows = null)
         {
             transform = null;
             int pw = width;
@@ -41,7 +41,7 @@ namespace CIE1931xy.Core.Export
                 DiagramStyle exportStyle = style;
                 DiagramStyle scaled = style.Clone();
                 scaled.FontScale = Math.Max(1.0, Math.Min(2.4, (width + height) / 2000.0));
-                DiagramRenderer renderer = new DiagramRenderer(scaled, curves, points);
+                DiagramRenderer renderer = new DiagramRenderer(scaled, curves, points, arrows);
                 renderer.Render(canvas, width, height);
                 transform = renderer.LastTransform;
             }
@@ -53,9 +53,9 @@ namespace CIE1931xy.Core.Export
 
         /// <summary>导出 PNG / TIFF（按 <paramref name="dpi"/> 放大绘制，保证清晰度）。</summary>
         public static void SaveBitmap(DiagramStyle style, IList<CieCurve> curves, IList<CiePoint> points,
-                                      string path, ImageFormat format, int width, int height, int dpi)
+                                      string path, ImageFormat format, int width, int height, int dpi, IList<CieArrow> arrows = null)
         {
-            using (Bitmap bmp = RenderToBitmap(style, curves, points, width, height, dpi))
+            using (Bitmap bmp = RenderToBitmap(style, curves, points, width, height, dpi, arrows))
             {
                 if (format == ImageFormat.Tiff)
                 {
@@ -70,13 +70,13 @@ namespace CIE1931xy.Core.Export
 
         /// <summary>导出 SVG 矢量图（文字为 &lt;text&gt;，可无损放大；真彩背景内嵌为 PNG）。</summary>
         public static void SaveSvg(DiagramStyle style, IList<CieCurve> curves, IList<CiePoint> points,
-                                   string path, int width, int height)
+                                   string path, int width, int height, IList<CieArrow> arrows = null)
         {
             SvgCanvas canvas = new SvgCanvas(width, height, 1.0);
             DiagramStyle exportStyle = style;
                 DiagramStyle scaled = style.Clone();
                 scaled.FontScale = Math.Max(1.0, Math.Min(2.4, (width + height) / 2000.0));
-                new DiagramRenderer(scaled, curves, points).Render(canvas, width, height);
+                new DiagramRenderer(scaled, curves, points, arrows).Render(canvas, width, height);
             File.WriteAllText(path, canvas.ToSvg(), new UTF8Encoding(false));
         }
 
@@ -125,7 +125,7 @@ namespace CIE1931xy.Core.Export
                                    DiagramStyle style, int width, int height)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("CIE1931 色度计算报告（CIE1931xy 重建版 2.0.0）");
+            sb.AppendLine("CIE1931 色度计算报告（CIE1931xy 重建版 2.1.0）");
             sb.AppendLine("生成时间：" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", Inv));
             sb.AppendLine("图型：" + PlotSpace.Title(style.Kind) + "，画布 " + width + " × " + height + " px");
             sb.AppendLine();

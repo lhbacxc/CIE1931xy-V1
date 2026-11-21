@@ -9,7 +9,7 @@
 | 部分 | 技术与约束 |
 | --- | --- |
 | 主程序 | C#、.NET 8、WinForms、System.Drawing/GDI+，仅 Windows |
-| 配置 | net8.0-windows，LangVersion=latest，Nullable/ImplicitUsings 关闭，版本 2.0.0 |
+| 配置 | net8.0-windows，LangVersion=latest，Nullable/ImplicitUsings 关闭，版本 2.1.0 |
 | 依赖 | 仅框架依赖；两个 csproj 都没有第三方 PackageReference |
 | 构建 | global.json 约束 .NET 10 SDK + PowerShell `./build.ps1`，可发布 win-x64 单文件 |
 | 测试 | net8.0 自定义 GoldenTests 控制台程序 + 主程序 `--selftest` |
@@ -24,7 +24,7 @@ flowchart LR
     P --> T[SelfTest 无窗口自检]
     M --> I[SpectrumCsvParser / CoordinateParser]
     I --> C[Colorimetry / PlanckianLocus]
-    C --> D[CieCurve / CiePoint 内存模型]
+    C --> D[CieCurve / CiePoint / CieArrow 内存模型]
     D --> R[DiagramRenderer + IPlotCanvas]
     R --> G[GdiCanvas 屏幕与 PNG/TIFF]
     R --> S[SvgCanvas SVG]
@@ -46,6 +46,8 @@ flowchart LR
 | `./src/CIE1931xy.Rebuilt/Program.cs` | CLI 参数、编码提供程序、DPI 策略、界面/自检入口 |
 | `./src/CIE1931xy.Rebuilt/MainForm.cs` | 新版布局、三页签、导入、选择、批量改名、样式及导出交互 |
 | `./src/CIE1931xy.Rebuilt/MainForm.FontSettings.cs` | 新版中英文字体、六类文字大小、混排预览及恢复默认交互 |
+| `./src/CIE1931xy.Rebuilt/MainForm.Arrows.cs`、`MainForm.ArrowDragging.cs`、`UI/ArrowEditorDialog.cs` | 点列旁的方向箭头、端点选择、编辑/删除、整体拖动及示意预览 |
+| `./src/CIE1931xy.Rebuilt/Core/ArrowModel.cs`、`Core/Rendering/ArrowGeometry.cs`、`ArrowRenderer.cs` | 参考点绑定、相对位置偏移与 GDI/SVG 共用的箭头几何/裁剪 |
 | `./src/CIE1931xy.Rebuilt/MainForm.Settings.cs`、`./src/CIE1931xy.Rebuilt/Core/AppSettings.cs`、`./src/CIE1931xy.Rebuilt/Core/SettingsStore.cs` | 配置白名单、启动恢复、变更保存及 UTF-8 JSON 完整写入后替换 |
 | `./src/CIE1931xy.Rebuilt/UI/` | 新版控件的小圆角绘制，保留 WinForms 原生交互与自动尺寸 |
 | `./src/CIE1931xy.Rebuilt/Form1.cs`、`Form1.Designer.cs` | 经典事件逻辑与控件布局 |
@@ -64,7 +66,7 @@ flowchart LR
 - 梯形积分与可选 Y=100 归一函数存在，但默认计算链路及 UI 没有调用它，也没有标准光源选择入口。
 - 新版工作台的 xy/u'v' 统一使用矢量绘图，已移除位图/矢量背景切换及新版 Ctrl+B；UI 范围固定。经典底图与底层兼容分支的位图 xy 仍须按底图自身轴矩形映射。
 - UI 导图是 1400×1400 px，DPI 仅为元数据；自检导图是 900×900 px。新版可导出 PNG/TIFF，SVG 不内嵌 PNG；底层自检仍覆盖可内嵌 PNG 的位图兼容分支。
-- GoldenTests 不覆盖新版完整流程，也不验证 UI 像素；自检不验证 TIFF，文件大小通过不能证明视觉一致。
+- GoldenTests 不覆盖新版完整流程，也不验证 UI 像素；箭头自检包含 PNG/TIFF/SVG 的内容、尺寸/DPI 与边界检查，仍不能替代完整 UI 或视觉验收。
 
 ## 项目约定与常见任务
 
@@ -100,6 +102,7 @@ codegraph status .
 | 真彩色域与 SVG 渐变、裁剪 | `Core/Rendering/ChromaBackground.cs`、`SvgCanvas.cs` |
 | 导出字段、DPI 与像素尺寸 | `Core/Export/Exporter.cs` 和 `MainForm` 的 ExportImage/ExportWidth/ExportHeight |
 | 新版布局、交互、选择 | `MainForm.cs`：BuildUi、BuildActionBar、CanvasMouseClick、BatchRename |
+| 箭头添加、管理、拖动与方向几何 | `MainForm.Arrows.cs`、`MainForm.ArrowDragging.cs`、`UI/ArrowEditorDialog.cs`、`Core/Rendering/ArrowGeometry.cs` / `ArrowRenderer.cs` |
 | 坐标轴标题、间距与留白 | `MainForm.cs`：EditAxisTitles；`Core/Rendering/DiagramRenderer.cs`：MeasureAxisLayout、DrawAxisTitles |
 | 黑白画布背景与文字对比 | `MainForm.cs`：OnStyleChanged；`Core/Rendering/DiagramRenderer.cs`：SetBlackBackground、LabelColor、DrawLegend |
 | 经典布局、双语文本 | `Form1.cs`、`Form1.Designer.cs`、`Core/CieData.cs` |

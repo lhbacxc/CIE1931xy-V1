@@ -12,7 +12,7 @@ using CIE1931xy.UI;
 namespace CIE1931xy
 {
     /// <summary>
-    /// 新版主界面（2.0.0）：
+    /// 新版主界面（2.1.0）：
     /// 左侧 = 数据页签（光谱曲线 / 三刺激值 / 色度坐标 / 坐标点）+ 样式设置；
     /// 右侧 = 色度图画布 + 工具条 + 状态栏。
     /// 经典界面仍保留在 Form1（启动参数 --classic）。
@@ -88,7 +88,7 @@ namespace CIE1931xy
             // 所有控件加入后才执行首次 DPI 缩放；提前布局会把 96dpi 基准
             // 更新为当前 DPI，导致后来创建的按钮只放大字体、不放大边界。
             SuspendLayout();
-            Text = "CIE1931 色度分析器 2.0 — CIE1931xy Rebuilt";
+            Text = "CIE1931 色度分析器 2.1 — CIE1931xy Rebuilt";
             Font = new Font("Microsoft YaHei UI", 9F);
             BackColor = Color.FromArgb(0xF4, 0xF5, 0xF7);
             ClientSize = new Size(1200, 800);
@@ -178,6 +178,10 @@ namespace CIE1931xy
             _canvas.Dock = DockStyle.Fill;
             _canvas.SizeMode = PictureBoxSizeMode.Zoom;
             _canvas.MouseClick += CanvasMouseClick;
+            _canvas.MouseDown += CanvasArrowMouseDown;
+            _canvas.MouseMove += CanvasArrowMouseMove;
+            _canvas.MouseUp += CanvasArrowMouseUp;
+            _canvas.MouseCaptureChanged += CanvasArrowCaptureChanged;
             _canvas.BackColor = Color.White;
             _canvasHost.Controls.Add(_canvas);
             split.Panel2.Controls.Add(_canvasHost);
@@ -191,7 +195,7 @@ namespace CIE1931xy
             _status.Spring = true;
             _status.TextAlign = ContentAlignment.MiddleLeft;
             status.Items.Add(_status);
-            ToolStripStatusLabel version = new ToolStripStatusLabel("v2.0.0");
+            ToolStripStatusLabel version = new ToolStripStatusLabel("v2.1.0");
             version.ForeColor = Color.FromArgb(0x80, 0x89, 0x96);
             status.Items.Add(version);
             Controls.Add(status);
@@ -323,6 +327,10 @@ namespace CIE1931xy
             view.DropDownItems.Add(_menuBlackBackground);
             view.DropDownItems.Add(MakeItem("坐标轴名称与间距…", delegate { EditAxisTitles(); }, Keys.None));
             view.DropDownItems.Add(MakeItem("字体与字号…", delegate { EditFonts(); }, Keys.None));
+            _menuAddArrow = MakeItem("添加箭头…", delegate { AddArrow(); }, Keys.None);
+            _menuManageArrows = MakeItem("管理箭头…", delegate { ManageArrows(); }, Keys.None);
+            view.DropDownItems.Add(_menuAddArrow);
+            view.DropDownItems.Add(_menuManageArrows);
             view.DropDownItems.Add(new ToolStripSeparator());
             view.DropDownItems.Add(MakeItem("图例", delegate { ToggleCheck(_chkLegend); }, Keys.None));
             view.DropDownItems.Add(MakeItem("波长标注", delegate { ToggleCheck(_chkWavelength); }, Keys.None));
@@ -359,7 +367,12 @@ namespace CIE1931xy
             _btnExportData.Click += delegate { ExportData(); };
             _btnExportImage = MakeBarButton("导出图片", true);
             _btnExportImage.Click += delegate { ExportImage(); };
+            _btnAddArrow = MakeBarButton("添加箭头", false);
+            _btnAddArrow.Click += delegate { AddArrow(); };
+            _btnManageArrows = MakeBarButton("管理箭头", false);
+            _btnManageArrows.Click += delegate { ManageArrows(); };
             AddToolbarGroup(bar, _btnColor, _btnOutline);
+            AddToolbarGroup(bar, _btnAddArrow, _btnManageArrows);
             AddToolbarGroup(bar, _btnExportData, _btnExportImage);
             return bar;
         }
@@ -758,6 +771,7 @@ namespace CIE1931xy
             _curves.Clear();
             _curves.Add(curve);
             _points.Clear();
+            _arrows.Clear();
             AddMessage("已载入示例：6500 K 黑体光谱（x≈0.3135, y≈0.3236）。");
             UpdateTables();
             ScheduleRender();
@@ -1023,6 +1037,7 @@ namespace CIE1931xy
 
         private void UpdateTables()
         {
+            PruneArrows();
             _gridCurves.Rows.Clear();
             _gridXyz.Rows.Clear();
             for (int i = 0; i < _curves.Count; i++)
@@ -1056,6 +1071,7 @@ namespace CIE1931xy
             _btnOutline.Enabled = hasData;
             _btnRename.Enabled = hasData;
             _btnExportData.Enabled = hasData;
+            UpdateArrowActions();
         }
 
         /// <summary>把表格选中状态同步到数据模型（选中项在画布上高亮，导出时不高亮）。</summary>
@@ -1080,6 +1096,8 @@ namespace CIE1931xy
         /// <summary>画布点击：命中数据点就选中它，否则取消全部选中。</summary>
         private void CanvasMouseClick(object sender, MouseEventArgs e)
         {
+            if (_arrowClickHandled) { _arrowClickHandled = false; return; }
+            ClearArrowSelection();
             if (_canvas.Image == null || _lastTransform == null) { ClearSelection(); return; }
 
             // PictureBox 用 Zoom：把控件坐标换算回图片坐标
@@ -1429,6 +1447,7 @@ namespace CIE1931xy
             }
             ScheduleRender();
             SetStatus((visible ? "已显示 " : "已隐藏 ") + curves.Count + " 条曲线。");
+            UpdateArrowActions();
         }
 
         private void DeleteCurves(List<CieCurve> curves)
@@ -1611,6 +1630,7 @@ namespace CIE1931xy
             _style.ShowLegend = _chkLegend.Checked;
             _style.ShowPointLabels = _chkLabels.Checked;
             _style.Bounds = FixedBounds();
+            UpdateArrowActions();
             UpdateReferenceLineState();
             ScheduleRender();
             ScheduleSettingsSave();
@@ -1622,6 +1642,7 @@ namespace CIE1931xy
             bool uv = _cmbKind.SelectedIndex == 1;
             _style.Kind = uv ? DiagramKind.Uv1976 : DiagramKind.Xy1931;
             _style.Bounds = FixedBounds();
+            UpdateArrowActions();
             UpdateReferenceLineState();
             ScheduleRender();
             ScheduleSettingsSave();
@@ -1672,7 +1693,7 @@ namespace CIE1931xy
                     previewH = Math.Min(_canvas.ClientSize.Height, 2400);
                 }
 
-                using (Bitmap bmp = Exporter.RenderToBitmap(_style, _curves, _points, previewW, previewH, 96, out _lastTransform))
+                using (Bitmap bmp = Exporter.RenderToBitmap(_style, _curves, _points, previewW, previewH, 96, out _lastTransform, _arrows))
                 {
                     Bitmap old = _canvas.Image as Bitmap;
                     _canvas.SizeMode = PictureBoxSizeMode.Zoom;
@@ -1822,18 +1843,18 @@ namespace CIE1931xy
                     string path = dlg.FileName;
                     if (dlg.FilterIndex == 3 || path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
                     {
-                        Exporter.SaveSvg(exportStyle, _curves, _points, path, ExportWidth, ExportHeight);
+                        Exporter.SaveSvg(exportStyle, _curves, _points, path, ExportWidth, ExportHeight, _arrows);
                         AddMessage("已导出 SVG 矢量图：" + Path.GetFileName(path));
                     }
                     else if (dlg.FilterIndex == 2 || path.EndsWith(".tif", StringComparison.OrdinalIgnoreCase) ||
                              path.EndsWith(".tiff", StringComparison.OrdinalIgnoreCase))
                     {
-                        Exporter.SaveBitmap(exportStyle, _curves, _points, path, ImageFormat.Tiff, ExportWidth, ExportHeight, _exportDpi);
+                        Exporter.SaveBitmap(exportStyle, _curves, _points, path, ImageFormat.Tiff, ExportWidth, ExportHeight, _exportDpi, _arrows);
                         AddMessage("已导出 TIFF：" + Path.GetFileName(path) + "（" + _exportDpi + " DPI）");
                     }
                     else
                     {
-                        Exporter.SaveBitmap(exportStyle, _curves, _points, path, ImageFormat.Png, ExportWidth, ExportHeight, _exportDpi);
+                        Exporter.SaveBitmap(exportStyle, _curves, _points, path, ImageFormat.Png, ExportWidth, ExportHeight, _exportDpi, _arrows);
                         AddMessage("已导出 PNG：" + Path.GetFileName(path) + "（" + _exportDpi + " DPI）");
                     }
                 }
@@ -1930,7 +1951,9 @@ namespace CIE1931xy
                 "   参考线：x+y=1，即 z=0；默认隐藏，仅适用于 CIE 1931 xy，按钮同时控制预览及图片导出。\n" +
                 "5. 导出：图片固定 1400×1400 像素，DPI 只改变元数据，不增加像素。\n" +
                 "   无网格图片：关闭「网格」，再导出所需格式即可。\n" +
-                "6. 导出：图片支持 PNG / TIFF / SVG；数据支持结果 CSV 与计算报告 TXT。\n\n" +
+                "6. 导出：图片支持 PNG / TIFF / SVG；数据支持结果 CSV 与计算报告 TXT。\n" +
+                "7. 箭头：右上「添加箭头」选择参考起点和终点，箭头默认放在点列旁边；用鼠标拖动箭头调整位置。\n" +
+                "   支持白色/自定义颜色、直线或弯曲、线宽与描边；「管理箭头」可编辑和删除。\n\n" +
                 "经典界面（原版 1.6.0.2 布局）可通过 视图 → 打开经典界面 打开，或启动参数 --classic。",
                 "使用说明", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
@@ -1938,10 +1961,12 @@ namespace CIE1931xy
         private void ShowAbout()
         {
             MessageBox.Show(this,
-                "CIE1931 色度分析器 2.0.0\n\n" +
-                "基于 nicklxg (2009) 的 CIE1931xy V.1.6.0.2 逆向重建版扩展：\n" +
+                "CIE1931 色度分析器 2.1.0\n\n" +
+                "基础源码由 chenhunquan 提供，本项目在其基础上进行了功能优化与扩展。\n" +
+                "源码提供者：https://github.com/chenhunquan\n\n" +
                 "· 保留原版计算口径与经典界面（Form1）\n" +
-                "· 新增多曲线/多坐标点、双图型、矢量渲染、SVG 导出、CCT/Δuv\n\n" +
+                "· 多曲线/多坐标点、双图型、矢量渲染、SVG 导出、CCT/Δuv\n" +
+                "· 点列旁的直线/弯曲箭头，支持拖动、样式编辑与图片导出\n\n" +
                 "原程序作者：nicklxg 2009  E-mail: nicklxg@163.com\n" +
                 "重建与扩展：CIE1931xy.Rebuilt",
                 "关于", MessageBoxButtons.OK, MessageBoxIcon.Information);

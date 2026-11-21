@@ -8,6 +8,7 @@ TestResults/
 
 # 本地实验光谱，保留在本机，不随公开源码仓库上传
 /测试光谱/
+/test-spectrum/
 
 # 本机代码索引与临时验证产物
 /.codegraph/

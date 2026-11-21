@@ -35,6 +35,9 @@ namespace CIE1931xy.Core.Rendering
         string ChineseFontFamily { get; set; }
         void DrawLine(Color color, double width, double x1, double y1, double x2, double y2);
         void DrawPolyline(Color color, double width, float[] xs, float[] ys);
+        void DrawBezier(Color color, double width, PointF start, PointF control1, PointF control2, PointF end);
+        void PushClip(RectangleD rect);
+        void PopClip();
         void FillPolygon(Color color, float[] xs, float[] ys);
         void DrawPolygon(Color color, float width, float[] xs, float[] ys);
         void DrawRect(Color color, double width, double x, double y, double w, double h);

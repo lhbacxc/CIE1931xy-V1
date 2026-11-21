@@ -125,7 +125,7 @@ namespace CIE1931xy.Core.Export
                                    DiagramStyle style, int width, int height)
         {
             StringBuilder sb = new StringBuilder();
-            sb.AppendLine("CIE1931 色度计算报告（CIE1931xy 重建版 2.0.0）");
+            sb.AppendLine("CIE1931 色度计算报告（CIE1931xy 重建版 2.1.0）");
             sb.AppendLine("生成时间：" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", Inv));
             sb.AppendLine("图型：" + PlotSpace.Title(style.Kind) + "，画布 " + width + " × " + height + " px");
             sb.AppendLine();

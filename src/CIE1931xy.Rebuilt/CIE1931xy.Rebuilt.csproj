@@ -13,9 +13,9 @@
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NoWarn>CS0168;CS0219;CS0414;CS0649;CS0162</NoWarn>
-    <Version>2.0.0</Version>
-    <FileVersion>2.0.0.0</FileVersion>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <Version>2.1.0</Version>
+    <FileVersion>2.1.0.0</FileVersion>
+    <AssemblyVersion>2.1.0.0</AssemblyVersion>
     <AssemblyTitle>CIE1931xy 色度分析器</AssemblyTitle>
     <Product>CIE1931xy</Product>
     <Description>CIE1931xy 重建版：保留原版 1.6.0.2 计算与界面，并新增多曲线、矢量图、多格式导出</Description>

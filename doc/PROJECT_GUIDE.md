@@ -9,7 +9,7 @@
 | 部分 | 技术与约束 |
 | --- | --- |
 | 主程序 | C#、.NET 8、WinForms、System.Drawing/GDI+，仅 Windows |
-| 配置 | net8.0-windows，LangVersion=latest，Nullable/ImplicitUsings 关闭，版本 2.0.0 |
+| 配置 | net8.0-windows，LangVersion=latest，Nullable/ImplicitUsings 关闭，版本 2.1.0 |
 | 依赖 | 仅框架依赖；两个 csproj 都没有第三方 PackageReference |
 | 构建 | global.json 约束 .NET 10 SDK + PowerShell `./build.ps1`，可发布 win-x64 单文件 |
 | 测试 | net8.0 自定义 GoldenTests 控制台程序 + 主程序 `--selftest` |

@@ -12,7 +12,7 @@ using CIE1931xy.UI;
 namespace CIE1931xy
 {
     /// <summary>
-    /// 新版主界面（2.0.0）：
+    /// 新版主界面（2.1.0）：
     /// 左侧 = 数据页签（光谱曲线 / 三刺激值 / 色度坐标 / 坐标点）+ 样式设置；
     /// 右侧 = 色度图画布 + 工具条 + 状态栏。
     /// 经典界面仍保留在 Form1（启动参数 --classic）。
@@ -88,7 +88,7 @@ namespace CIE1931xy
             // 所有控件加入后才执行首次 DPI 缩放；提前布局会把 96dpi 基准
             // 更新为当前 DPI，导致后来创建的按钮只放大字体、不放大边界。
             SuspendLayout();
-            Text = "CIE1931 色度分析器 2.0 — CIE1931xy Rebuilt";
+            Text = "CIE1931 色度分析器 2.1 — CIE1931xy Rebuilt";
             Font = new Font("Microsoft YaHei UI", 9F);
             BackColor = Color.FromArgb(0xF4, 0xF5, 0xF7);
             ClientSize = new Size(1200, 800);
@@ -195,7 +195,7 @@ namespace CIE1931xy
             _status.Spring = true;
             _status.TextAlign = ContentAlignment.MiddleLeft;
             status.Items.Add(_status);
-            ToolStripStatusLabel version = new ToolStripStatusLabel("v2.0.0");
+            ToolStripStatusLabel version = new ToolStripStatusLabel("v2.1.0");
             version.ForeColor = Color.FromArgb(0x80, 0x89, 0x96);
             status.Items.Add(version);
             Controls.Add(status);
@@ -1961,10 +1961,12 @@ namespace CIE1931xy
         private void ShowAbout()
         {
             MessageBox.Show(this,
-                "CIE1931 色度分析器 2.0.0\n\n" +
-                "基于 nicklxg (2009) 的 CIE1931xy V.1.6.0.2 逆向重建版扩展：\n" +
+                "CIE1931 色度分析器 2.1.0\n\n" +
+                "基础源码由 chenhunquan 提供，本项目在其基础上进行了功能优化与扩展。\n" +
+                "源码提供者：https://github.com/chenhunquan\n\n" +
                 "· 保留原版计算口径与经典界面（Form1）\n" +
-                "· 新增多曲线/多坐标点、双图型、矢量渲染、SVG 导出、CCT/Δuv\n\n" +
+                "· 多曲线/多坐标点、双图型、矢量渲染、SVG 导出、CCT/Δuv\n" +
+                "· 点列旁的直线/弯曲箭头，支持拖动、样式编辑与图片导出\n\n" +
                 "原程序作者：nicklxg 2009  E-mail: nicklxg@163.com\n" +
                 "重建与扩展：CIE1931xy.Rebuilt",
                 "关于", MessageBoxButtons.OK, MessageBoxIcon.Information);

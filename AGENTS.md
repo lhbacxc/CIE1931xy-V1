@@ -30,7 +30,7 @@ $PSDefaultParameterValues['*:Encoding'] = 'UTF8'
 
 ## 技术栈与源码边界
 
-- 主工程 `./src/CIE1931xy.Rebuilt/CIE1931xy.Rebuilt.csproj`：C# / net8.0-windows / WinForms；版本 2.0.0，无第三方 PackageReference。
+- 主工程 `./src/CIE1931xy.Rebuilt/CIE1931xy.Rebuilt.csproj`：C# / net8.0-windows / WinForms；版本 2.1.0，无第三方 PackageReference。
 - 测试工程 `./tests/GoldenTests/GoldenTests.csproj`：net8.0 控制台程序，通过 Compile Link 复用四个经典计算文件，不引用主工程。
 - 主入口 `./src/CIE1931xy.Rebuilt/Program.cs`；默认 `MainForm`，`--classic` 使用 `Form1`，`--selftest` 调用 `Core/SelfTest.cs`。
 - 经典链路 `Form1 → SpectralInput → CieMath → VbText` 保留 VB 语义、1nm/5nm 和四位小数取整；改动须检查 oracle。
